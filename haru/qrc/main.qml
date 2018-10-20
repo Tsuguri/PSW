@@ -11,6 +11,8 @@ import Qt3D.Extras 2.0
 
 import QtCharts 2.0
 
+import Haru 1.0 as Haru
+
 import "controls"
 
 ApplicationWindow {
@@ -24,10 +26,8 @@ ApplicationWindow {
     minimumWidth: 1000
     minimumHeight: 600
 
-    Item{
+    Haru.Simulation {
         id: simulator
-        property real time: 0 
-        property bool running: true
     }
 
     header: ToolBar {
@@ -35,16 +35,29 @@ ApplicationWindow {
             anchors.fill: parent
             spacing: 4
 
-            ToolButton {
+            MenuItem {
                 text: "Run"
-                enabled: !simulator.running
+                enabled: !simulator.running || simulator.paused
+                width: 50
+                onTriggered: {
+                    if (simulator.running) {
+                        simulator.togglePause()
+                    } else {
+                        simulator.runSimulation(0.01, 3);
+                    }
+                }
             }
-            ToolButton {
+            MenuItem {
                 text: "Pause"
-                enabled: simulator.running
+                enabled: simulator.running && !simulator.paused
+                width: 75
+                onTriggered: simulator.togglePause()
             }
-            ToolButton {
+            MenuItem {
                 text: "Reset"
+                width: 75
+                onTriggered: simulator.reset()
+                enabled: simulator.running
             }
         }
     }
@@ -206,6 +219,7 @@ ApplicationWindow {
         Visualization {
             id: visualization
             running: simulator.running
+            springLength: 10 + simulator.position
 
             width: 250
             anchors {

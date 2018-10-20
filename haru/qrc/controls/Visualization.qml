@@ -14,13 +14,13 @@ Rectangle {
     property real springLength: 6.0
 
     border {
-        width: 1
+        width: 5
         color: running ? "lightgreen" : "lightblue"
     } // border
 
     Scene3D {
         anchors.fill: parent
-        anchors.margins: 1
+        anchors.margins: 3
         focus: true
         aspects: ["input","logic","render"]
         cameraAspectRatioMode: Scene3D.AutomaticAspectRatio
