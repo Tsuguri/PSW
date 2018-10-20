@@ -29,10 +29,16 @@ void Simulation::togglePause() {
     emit pausedChanged();
 }
 
-void Simulation::runSimulation(double dt, double mass) {
+void Simulation::runSimulation(double dt, double mass, double p0, double damping, double flx) {
     timer->setInterval(static_cast<int>(dt*1000));
     time = 0;
     this->dt = dt;
+    this->flex = flx;
+    this->damping = damping;
+    this->mass = mass;
+
+
+
     timer->start();
     running = true;
     paused = false;
@@ -55,11 +61,13 @@ void Simulation::tick() {
 
     time += dt;
     emit positionChanged();
+    emit stepMade();
+    emit timeChanged();
 }
 
 
 double Simulation::getTime() const {
-    return 0.0;
+    return time;
 }
 
 double Simulation::getPosition() const {
@@ -67,7 +75,7 @@ double Simulation::getPosition() const {
 }
 
 double Simulation::getVelocity() const {
-    return 0.0;
+    return std::cos(time);
 }
 double Simulation::getAcceleration() const {
     return 0.0;

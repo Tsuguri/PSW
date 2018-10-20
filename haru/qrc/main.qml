@@ -30,6 +30,16 @@ ApplicationWindow {
         id: simulator
     }
 
+    Item{
+        id: initialValues
+
+        property real p0: 0
+        property real dt: 0.01
+        property real mass: 1
+        property real flex: 0.1
+        property real damping: 0.1
+    }
+
     header: ToolBar {
         Row {
             anchors.fill: parent
@@ -43,7 +53,13 @@ ApplicationWindow {
                     if (simulator.running) {
                         simulator.togglePause()
                     } else {
-                        simulator.runSimulation(0.01, 3);
+                        simulator.runSimulation(
+                            initialValues.dt,
+                            initialValues.mass,
+                            initialValues.p0,
+                            initialValues.flex,
+                            initialValues.damping
+                        );
                     }
                 }
             }
@@ -56,7 +72,28 @@ ApplicationWindow {
             MenuItem {
                 text: "Reset"
                 width: 75
-                onTriggered: simulator.reset()
+                onTriggered: {
+                    simulator.reset()
+                    positionSeries.clear()
+                    velocitySeries.clear()
+                    accelerationSeries.clear()
+                    elasticitySeries.clear()
+                    dragSeries.clear()
+                    externalSeries.clear()
+                    cspaceSeries.clear()
+
+                    kinematicsYAxis.min = -1
+                    kinematicsYAxis.max = 1
+
+                    forceYAxis.min = -5
+                    forceYAxis.max = 5
+
+                    velocityAxis.min = -1
+                    velocityAxis.max = 1
+                    positionAxis.min = -1
+                    positionAxis.max = 1
+                    
+                }
                 enabled: simulator.running
             }
         }
@@ -231,7 +268,7 @@ ApplicationWindow {
         Item {
             id: bottomGraphs
 
-            height: 250
+            height: 300
 
             anchors {
                 left: leftPaneContainer.right
@@ -260,8 +297,9 @@ ApplicationWindow {
                         ValueAxis {
                             id: kinematicsTimeAxis
                             property real windowWidth: 15
-                            min: simulator.time < 2 * windowWidth / 3 ? 0 : simulator.time - 2 * windowWidth / 3
-                            max: simulator.time < 2 * windowWidth / 3 ? windowWidth : simulator.time + windowWidth / 3
+                            property real filled: 0.9
+                            min: simulator.time < filled * windowWidth ? 0 : simulator.time - filled * windowWidth
+                            max: simulator.time < filled * windowWidth ? windowWidth : simulator.time + windowWidth * (1-filled)
                         }
 
                         ValueAxis {
@@ -296,8 +334,34 @@ ApplicationWindow {
                         }
 
                     }
-                }
-            }
+                } // section 
+            } //row layout
+        } //bottom graph
+    } //background
+
+    Connections {
+        target: simulator
+        onStepMade: {
+            positionSeries.append(simulator.time, simulator.position)
+            velocitySeries.append(simulator.time, simulator.velocity)
+            accelerationSeries.append(simulator.time, simulator.acceleration)
+
+            kinematicsYAxis.min = Math.min(kinematicsYAxis.min, simulator.position, simulator.velocity, simulator.acceleration)
+            kinematicsYAxis.max = Math.max(kinematicsYAxis.max, simulator.position, simulator.velocity, simulator.acceleration)
+
+            //elasticitySeries.append(simulator.time, simulator.elasticityForce)
+            //dragSeries.append(simulator.time, simulator.dragForce)
+            //externalSeries.append(simulator.time, simulator.externalForce)
+
+            //forceYAxis.min = Math.min(forceYAxis.min, simulator.elasticityForce, simulator.dragForce, simulator.externalForce)
+            //forceYAxis.max = Math.max(forceYAxis.max, simulator.elasticityForce, simulator.dragForce, simulator.externalForce)
+
+            cspaceSeries.append(simulator.position, simulator.velocity)
+
+            positionAxis.min = Math.min(positionAxis.min, simulator.position)
+            positionAxis.max = Math.max(positionAxis.max, simulator.position)
+            velocityAxis.min = Math.min(velocityAxis.min, simulator.velocity)
+            velocityAxis.max = Math.max(velocityAxis.max, simulator.velocity)
         }
     }
-}
+} // main window

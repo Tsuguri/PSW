@@ -33,7 +33,7 @@ class Simulation : public QObject{
 
         void tick();
 
-        Q_INVOKABLE void runSimulation(double dt, double mass);
+        Q_INVOKABLE void runSimulation(double dt, double mass, double p0, double damping, double flx);
 
         Q_INVOKABLE void togglePause();
         Q_INVOKABLE void reset();
@@ -46,9 +46,13 @@ signals:
         void velocityChanged();
         void accelerationChanged();
         void timeChanged();
+        void stepMade();
 
     private:
         double dt;
+        double flex;
+        double damping;
+        double mass;
 
         bool running;
         bool paused;
