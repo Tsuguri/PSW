@@ -1,5 +1,6 @@
 #include "simulation.hpp"
 #include <iostream>
+#include <cmath>
 
 Simulation::Simulation(QObject *parent)
     : QObject(parent), running(false), time(0.0), timer(new QTimer(this)),
@@ -75,7 +76,7 @@ void Simulation::tick() {
 
   //time += dt;
 
-  auto nextState = State{sin(time), cos(time), time};
+  auto nextState = State{std::sin(time), std::cos(time), time};
 
   auto elapsedTime = elapsed->elapsed() + elapsedNotUsed;
   elapsed->restart();
