@@ -3,17 +3,17 @@
 
 #include "simulation.hpp"
 
-int main(int argc, char** argv) {
-    QApplication app(argc, argv);
+int main(int argc, char **argv) {
+  QApplication app(argc, argv);
 
-    QQmlApplicationEngine engine;
+  QQmlApplicationEngine engine;
 
-    //qmlRegisterType<PathfindingSimulator>("PSW", 1, 0, "Simulator");
-    qmlRegisterType<Simulation>("Haru", 1, 0, "Simulation");
+  // qmlRegisterType<PathfindingSimulator>("PSW", 1, 0, "Simulator");
+  qmlRegisterType<Simulation>("Haru", 1, 0, "Simulation");
 
-    engine.load(QUrl("qrc:/main.qml"));
-    if (engine.rootObjects().isEmpty())
-        return -1;
+  engine.load(QUrl("qrc:/main.qml"));
+  if (engine.rootObjects().isEmpty())
+    return -1;
 
-    return app.exec();
+  return app.exec();
 }

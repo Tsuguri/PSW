@@ -33,11 +33,12 @@ ApplicationWindow {
     Item{
         id: initialValues
 
-        property real p0: 0
-        property real dt: 0.01
-        property real mass: 1
-        property real flex: 0.1
-        property real damping: 0.1
+        property real p0: Number.fromLocaleString(positionInput.text)
+        property real v0: Number.fromLocaleString(velocityInput.text)
+        property real dt: Number.fromLocaleString(timeInput.text)
+        property real mass: Number.fromLocaleString(massInput.text)
+        property real flex: Number.fromLocaleString(flexInput.text)
+        property real damping: Number.fromLocaleString(dampInput.text)
     }
 
     header: ToolBar {
@@ -53,12 +54,18 @@ ApplicationWindow {
                     if (simulator.running) {
                         simulator.togglePause()
                     } else {
+
+                        if( !positionInput.valid || !velocityInput.valid || !timeInput.valid || !massInput.valid || !flexInput.valid || !dampInput.valid){
+                            return;
+                        }
+
                         simulator.runSimulation(
                             initialValues.dt,
                             initialValues.mass,
                             initialValues.p0,
-                            initialValues.flex,
-                            initialValues.damping
+                            initialValues.v0,
+                            initialValues.damping,
+                            initialValues.flex
                         );
                     }
                 }
@@ -77,7 +84,7 @@ ApplicationWindow {
                     positionSeries.clear()
                     velocitySeries.clear()
                     accelerationSeries.clear()
-                    elasticitySeries.clear()
+                    flexSeries.clear()
                     dragSeries.clear()
                     externalSeries.clear()
                     cspaceSeries.clear()
@@ -88,10 +95,10 @@ ApplicationWindow {
                     forceYAxis.min = -5
                     forceYAxis.max = 5
 
-                    velocityAxis.min = -1
-                    velocityAxis.max = 1
-                    positionAxis.min = -1
-                    positionAxis.max = 1
+                    velocityAxis.min = -10
+                    velocityAxis.max = 10
+                    positionAxis.min = -10
+                    positionAxis.max = 10
                     
                 }
                 enabled: simulator.running
@@ -126,17 +133,176 @@ ApplicationWindow {
                     header: "Info"
                     Layout.fillWidth: true
                     Layout.fillHeight: true
-                    Layout.maximumHeight: 280
+                    Layout.maximumHeight: 480
                     Layout.minimumHeight: 50
+
+                    GridLayout{
+                        width: 200
+                        columns: 2
+
+                        Text {
+                            text: "Time"
+                        }
+                        Text {
+                            text: simulator.time.toFixed(3) + " s"
+                        }
+                        Text {
+                            text: "Spring state"
+                            font.bold: true
+                            Layout.columnSpan: 2
+                        }
+                        Text {
+                            text: "Mass" 
+                        }
+                        Text {
+                            text: simulator.mass.toFixed(3) + " kg"
+                        }
+                        Text {
+                            text: "Position: "
+                        }
+                        Text {
+                            text: simulator.position.toFixed(3) + " m"
+                        }
+                        Text {
+                            text: "Velocity: "
+                        }
+                        Text {
+                            text: simulator.velocity.toFixed(3) + " m/s"
+                        }
+                        Text {
+                            text: "Acceleration: "
+                        }
+                        Text {
+                            text: simulator.acceleration.toFixed(3) + " m/s2"
+                        }
+
+                        Text {
+                            text: "Forces"
+                            font.bold: true
+                            Layout.columnSpan: 2
+                        }
+                        Text {
+                            text: "Elasticity"
+                        }
+                        Text {
+                            text: simulator.flexForce.toFixed(3) + " N/kg"
+                        }
+                        Text {
+                            text: "Damping"
+                        }
+                        Text {
+                            text: simulator.dampingForce.toFixed(3) + " N/kg"
+                        }
+                        Text {
+                            text: "External"
+                        }
+                        Text {
+                            text: simulator.externalForce.toFixed(3) + " N/kg"
+                        }
+                    }
+
                 }
 
                 ScrollableSection {
+                    id: initialState
                     Layout.fillWidth: true
                     Layout.fillHeight: true
                     Layout.minimumHeight: 50
 
+                    property bool inputEnabled: !simulator.running
                     header: "Properties"
 
+                    GridLayout {
+                        Layout.fillWidth: true
+                        columns: 2
+                        Text {
+                            text: "Simulation"
+                            font.bold: true
+                            Layout.columnSpan: 2
+                        }
+                        Text {
+                            text: "Time step: "
+                        }
+                        DecimalInput {
+                            id: timeInput
+                            text: "0,1"
+                            Layout.fillWidth: true
+                            min: 0.001
+                            max: 1.0
+                            decimals: 3
+                            enabled: initialState.inputEnabled
+                        }
+                        Text {
+                            text: "Weight"
+                            font.bold: true
+                            Layout.columnSpan: 2
+                        }
+                        Text {
+                            text: "Mass: "
+                        }
+                        DecimalInput {
+                            id: massInput
+                            text: "2,0"
+                            Layout.fillWidth: true
+                            min: 0
+                            max: 100
+                            decimals: 2
+                            enabled: initialState.inputEnabled
+                        }
+                        Text {
+                            text: "Position: "
+                        }
+                        DecimalInput {
+                            id: positionInput
+                            text: "0,0"
+                            Layout.fillWidth: true
+                            min: -10.0
+                            max: 10.0
+                            decimals: 2
+                            enabled: initialState.inputEnabled
+                        }
+                        Text {
+                            text: "Velocity: "
+                        }
+                        DecimalInput {
+                            id: velocityInput
+                            text: "0,0"
+                            Layout.fillWidth: true
+                            min: -10.0
+                            max: 10.0
+                            decimals: 2
+                            enabled: initialState.inputEnabled
+                        }
+                        Text {
+                            text: "Forces"
+                            font.bold: true
+                            Layout.columnSpan: 2
+                        }
+                        Text {
+                            text: "Elasticity:"
+                        }
+                        DecimalInput {
+                            id: flexInput
+                            text: "0,3"
+                            Layout.fillWidth: true
+                            min: 0.01
+                            max: 10.0
+                            decimals: 2
+                            enabled: initialState.inputEnabled
+                        }
+                        Text {
+                            text: "Damping:"
+                        }
+                        DecimalInput {
+                            id: dampInput
+                            text: "0,1"
+                            Layout.fillWidth: true
+                            min: 0.01
+                            max: 10.0
+                            decimals: 2
+                            enabled: initialState.inputEnabled
+                        }
+                    }
                 }
             }
         }
@@ -174,8 +340,10 @@ ApplicationWindow {
                         ValueAxis {
                             id: forceTimeAxis
                             property real windowWidth: 15
-                            min: simulator.time < 2 * windowWidth / 3 ? 0 : simulator.time - 2 * windowWidth / 3
-                            max: simulator.time < 2 * windowWidth / 3 ? windowWidth : simulator.time + windowWidth / 3
+                            property real fill: 0.9
+
+                            min: simulator.time < fill * windowWidth ? 0 : simulator.time - fill * windowWidth
+                            max: simulator.time < fill * windowWidth ? windowWidth : simulator.time + (1-fill) * windowWidth
                         }
 
                         ValueAxis {
@@ -185,7 +353,7 @@ ApplicationWindow {
                         }
 
                         LineSeries {
-                            id: elasticitySeries
+                            id: flexSeries
                             name: "Elasticity"
                             axisX: forceTimeAxis
                             axisY: forceYAxis
@@ -229,14 +397,14 @@ ApplicationWindow {
 
                         ValueAxis {
                             id: positionAxis
-                            min: -1
-                            max: 1
+                            min: -10
+                            max: 10
                         }
 
                         ValueAxis {
                             id: velocityAxis
-                            min: -1
-                            max: 1
+                            min: -10
+                            max: 10
                         }
 
                         LineSeries {
@@ -349,19 +517,15 @@ ApplicationWindow {
             kinematicsYAxis.min = Math.min(kinematicsYAxis.min, simulator.position, simulator.velocity, simulator.acceleration)
             kinematicsYAxis.max = Math.max(kinematicsYAxis.max, simulator.position, simulator.velocity, simulator.acceleration)
 
-            //elasticitySeries.append(simulator.time, simulator.elasticityForce)
-            //dragSeries.append(simulator.time, simulator.dragForce)
-            //externalSeries.append(simulator.time, simulator.externalForce)
+            flexSeries.append(simulator.time, simulator.flexForce)
+            dragSeries.append(simulator.time, simulator.dampingForce)
+            externalSeries.append(simulator.time, simulator.externalForce)
 
-            //forceYAxis.min = Math.min(forceYAxis.min, simulator.elasticityForce, simulator.dragForce, simulator.externalForce)
-            //forceYAxis.max = Math.max(forceYAxis.max, simulator.elasticityForce, simulator.dragForce, simulator.externalForce)
+            forceYAxis.min = Math.min(forceYAxis.min, simulator.flexForce, simulator.dampingForce, simulator.externalForce)
+            forceYAxis.max = Math.max(forceYAxis.max, simulator.flexForce, simulator.dampingForce, simulator.externalForce)
 
             cspaceSeries.append(simulator.position, simulator.velocity)
 
-            positionAxis.min = Math.min(positionAxis.min, simulator.position)
-            positionAxis.max = Math.max(positionAxis.max, simulator.position)
-            velocityAxis.min = Math.min(velocityAxis.min, simulator.velocity)
-            velocityAxis.max = Math.max(velocityAxis.max, simulator.velocity)
         }
     }
 } // main window

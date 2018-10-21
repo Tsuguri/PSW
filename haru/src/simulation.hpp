@@ -3,61 +3,95 @@
 
 #include <memory>
 
-#include <QObject>
 #include <QElapsedTimer>
+#include <QObject>
 #include <QTimer>
 
-class Simulation : public QObject{
-    Q_OBJECT
+struct State {
+  double position;
+  double velocity;
+  double time;
+};
 
-    Q_PROPERTY(bool running READ getRunning NOTIFY runningChanged);
-    Q_PROPERTY(bool paused READ getPaused NOTIFY pausedChanged);
+class Simulation : public QObject {
+  Q_OBJECT
 
-    Q_PROPERTY(double position READ getPosition NOTIFY positionChanged);
-    Q_PROPERTY(double velocity READ getVelocity NOTIFY velocityChanged);
-    Q_PROPERTY(double acceleration READ getAcceleration NOTIFY accelerationChanged);
+  Q_PROPERTY(bool running READ getRunning NOTIFY runningChanged);
+  Q_PROPERTY(bool paused READ getPaused NOTIFY pausedChanged);
 
-    Q_PROPERTY(double time READ getTime NOTIFY timeChanged);
+  Q_PROPERTY(double position READ getPosition NOTIFY positionChanged);
+  Q_PROPERTY(double velocity READ getVelocity NOTIFY velocityChanged);
+  Q_PROPERTY(
+      double acceleration READ getAcceleration NOTIFY accelerationChanged);
 
-    public:
-        explicit Simulation(QObject* parent = nullptr);
-        ~Simulation();
+  Q_PROPERTY(double flexForce READ getFlexForce NOTIFY flexForceChanged);
+  Q_PROPERTY(
+      double dampingForce READ getDampeningForce NOTIFY dampeningForceChanged);
+  Q_PROPERTY(
+      double externalForce READ getExternalForce NOTIFY externalForceChanged);
 
-        bool getRunning() const;
-        bool getPaused() const;
-        double getPosition() const;
-        double getVelocity() const;
-        double getAcceleration() const;
-        double getTime() const;
+  Q_PROPERTY(double time READ getTime NOTIFY timeChanged);
+  Q_PROPERTY(double mass READ getMass NOTIFY massChanged);
 
+public:
+  explicit Simulation(QObject *parent = nullptr);
+  ~Simulation();
 
-        void tick();
+  bool getRunning() const;
+  bool getPaused() const;
+  double getPosition() const;
+  double getVelocity() const;
+  double getAcceleration() const;
+  double getTime() const;
 
-        Q_INVOKABLE void runSimulation(double dt, double mass, double p0, double damping, double flx);
+  double getFlexForce() const;
+  double getDampeningForce() const;
+  double getExternalForce() const;
 
-        Q_INVOKABLE void togglePause();
-        Q_INVOKABLE void reset();
+  double getForce() const;
+
+  double getMass() const;
+
+  void tick();
+
+  Q_INVOKABLE void runSimulation(double dt, double mass, double p0, double v0,
+                                 double damping, double flx);
+
+  Q_INVOKABLE void togglePause();
+  Q_INVOKABLE void reset();
 
 signals:
-        void runningChanged();
-        void pausedChanged();
+  void runningChanged();
+  void pausedChanged();
 
-        void positionChanged();
-        void velocityChanged();
-        void accelerationChanged();
-        void timeChanged();
-        void stepMade();
+  void positionChanged();
+  void velocityChanged();
+  void accelerationChanged();
 
-    private:
-        double dt;
-        double flex;
-        double damping;
-        double mass;
+  void flexForceChanged();
+  void dampeningForceChanged();
+  void externalForceChanged();
 
-        bool running;
-        bool paused;
-        double time;
-        std::unique_ptr<QTimer> timer;
+  void timeChanged();
+  void stepMade();
+  void massChanged();
+
+private:
+  void StateChanged();
+  double dt;
+  double flex;
+  double damping;
+  double mass;
+
+  bool running;
+  bool paused;
+  double time;
+  State current;
+  State previous;
+
+  std::unique_ptr<QTimer> timer;
+  std::unique_ptr<QElapsedTimer> elapsed;
+  quint64 elapsedNotUsed;
 };
 
 #endif // SIMULATOR_HPP
