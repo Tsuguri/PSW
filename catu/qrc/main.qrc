@@ -2,5 +2,6 @@
     <qresource prefix="/">
         <file>main.qml</file>
     	<file>images/texture.png</file>
+    	<file>images/texture2.jpg</file>
     </qresource>
 </RCC>

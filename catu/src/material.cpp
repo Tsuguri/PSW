@@ -69,7 +69,7 @@ Material::Material(Qt3DCore::QEntity *parent) : Qt3DCore::QEntity(parent) {
   auto material = new Qt3DExtras::QDiffuseMapMaterial(this);
   auto texture = material->diffuse();
   auto textureImage = new Qt3DRender::QTextureImage();
-  textureImage->setSource(QUrl("qrc:/images/texture.png"));
+  textureImage->setSource(QUrl("qrc:/images/texture2.jpg"));
   texture->addTextureImage(textureImage);
 
   transform = new Qt3DCore::QTransform(this);
