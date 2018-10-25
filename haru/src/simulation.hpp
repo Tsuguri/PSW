@@ -7,6 +7,8 @@
 #include <QObject>
 #include <QTimer>
 
+#include "math.hpp"
+
 struct State {
   double position;
   double velocity;
@@ -33,6 +35,8 @@ class Simulation : public QObject {
   Q_PROPERTY(double time READ getTime NOTIFY timeChanged);
   Q_PROPERTY(double mass READ getMass NOTIFY massChanged);
 
+  Q_PROPERTY(double originPosition READ getOriginPosition NOTIFY originChanged);
+
 public:
   explicit Simulation(QObject *parent = nullptr);
   ~Simulation();
@@ -51,11 +55,12 @@ public:
   double getForce() const;
 
   double getMass() const;
+  double getOriginPosition() const;
 
   void tick();
 
   Q_INVOKABLE void runSimulation(double dt, double mass, double p0, double v0,
-                                 double damping, double flx);
+                                 double damping, double flx, MathFormula* externalForce, MathFormula* originMovement);
 
   Q_INVOKABLE void togglePause();
   Q_INVOKABLE void reset();
@@ -75,6 +80,7 @@ signals:
   void timeChanged();
   void stepMade();
   void massChanged();
+  void originChanged();
 
 private:
   void StateChanged();
@@ -92,6 +98,8 @@ private:
   std::unique_ptr<QTimer> timer;
   std::unique_ptr<QElapsedTimer> elapsed;
   quint64 elapsedNotUsed;
+  MathFormula* externalForce;
+  MathFormula* originMovement;
 };
 
 #endif // SIMULATOR_HPP

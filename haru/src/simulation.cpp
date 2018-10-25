@@ -32,13 +32,15 @@ void Simulation::togglePause() {
 }
 
 void Simulation::runSimulation(double dt, double mass, double p0, double v0,
-                               double damping, double flx) {
+                               double damping, double flx, MathFormula* externalForce, MathFormula* originMovement) {
   timer->setInterval(static_cast<int>(dt * 1000));
   time = 0;
   this->dt = dt;
   this->flex = flx;
   this->damping = damping;
   this->mass = mass;
+  this->originMovement = originMovement;
+  this->externalForce = externalForce;
 
   current = State{p0, v0, 0};
   previous = State{p0 - dt * v0, v0, -dt};
@@ -47,6 +49,7 @@ void Simulation::runSimulation(double dt, double mass, double p0, double v0,
   elapsed->restart();
   running = true;
   paused = false;
+
   emit massChanged();
   emit runningChanged();
   emit pausedChanged();
@@ -59,6 +62,7 @@ void Simulation::StateChanged() {
   emit flexForceChanged();
   emit dampeningForceChanged();
   emit externalForceChanged();
+  emit originChanged();
 }
 
 void Simulation::reset() {
@@ -116,16 +120,19 @@ double Simulation::getPosition() const { return current.position; }
 double Simulation::getVelocity() const { return current.velocity; }
 double Simulation::getAcceleration() const { return getForce() / mass; }
 
-double Simulation::getFlexForce() const { return flex * -getPosition(); }
+double Simulation::getFlexForce() const { return flex * (-getOriginPosition() -getPosition()); }
 
 double Simulation::getDampeningForce() const {
   return -damping * getVelocity();
 }
 
-double Simulation::getExternalForce() const { return 0.0; }
+double Simulation::getExternalForce() const { return externalForce ? externalForce->evaluate(current.time): 0.0; }
 
 double Simulation::getForce() const {
   return getFlexForce() + getDampeningForce() + getExternalForce();
 }
 
 double Simulation::getMass() const { return mass; }
+double Simulation::getOriginPosition() const {
+    return originMovement ? originMovement->evaluate(current.time) : 0.0;
+}

@@ -9,7 +9,10 @@ file(GLOB_RECURSE SOURCE_FILES "src/*.[hc]pp")
 set(CMAKE_AUTOMOC ON)
 
 find_package(Qt5 COMPONENTS Qml Quick Charts 3DCore 3DRender 3DInput 3DLogic 3DExtras 3DAnimation REQUIRED)
+find_package(MuParser)
 
+
+include_directories(${PROJECT_NAME} ${MUPARSER_INCLUDE_DIRS})
 qt5_add_resources(RESOURCES qrc/main.qrc)
 
 add_executable(${PROJECT_NAME} ${SOURCE_FILES} ${HEADERS} ${RESOURCES})

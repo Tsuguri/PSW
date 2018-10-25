@@ -30,6 +30,14 @@ ApplicationWindow {
         id: simulator
     }
 
+    Haru.MathFormula {
+        id: externalForceFormula
+    }
+
+    Haru.MathFormula {
+        id: originMovementFormula
+    }
+
     Item{
         id: initialValues
 
@@ -55,7 +63,7 @@ ApplicationWindow {
                         simulator.togglePause()
                     } else {
 
-                        if( !positionInput.valid || !velocityInput.valid || !timeInput.valid || !massInput.valid || !flexInput.valid || !dampInput.valid){
+                        if( !positionInput.valid || !velocityInput.valid || !timeInput.valid || !massInput.valid || !flexInput.valid || !dampInput.valid || !originMovementFormula.valid || !externalForceFormula){
                             return;
                         }
 
@@ -65,7 +73,9 @@ ApplicationWindow {
                             initialValues.p0,
                             initialValues.v0,
                             initialValues.damping,
-                            initialValues.flex
+                            initialValues.flex,
+                            externalForceFormula,
+                            originMovementFormula
                         );
                     }
                 }
@@ -297,10 +307,45 @@ ApplicationWindow {
                             id: dampInput
                             text: "0,1"
                             Layout.fillWidth: true
-                            min: 0.01
+                            min: 0.0
                             max: 10.0
                             decimals: 2
                             enabled: initialState.inputEnabled
+                        }
+                        Text {
+                            text: "External force:"
+                        }
+                        TextField {
+                            id: externalForceField
+                            Layout.fillWidth: true
+                            text: "0,0"
+                            placeholderText: qsTr("Enter formula")
+                            enabled: initialState.inputEnabled
+                            background: Rectangle {
+                                border {
+                                    width: 1
+                                    color: externalForceFormula.valid ? "darkgray" : "red"
+                                }
+                            }
+                            onTextChanged: externalForceFormula.text = externalForceField.text
+                        }
+
+                        Text {
+                            text: "Origin movement: "
+                        }
+                        TextField {
+                            id: originMovementField
+                            Layout.fillWidth: true
+                            text: "0,0"
+                            placeholderText: qsTr("Enter formula")
+                            enabled: initialState.inputEnabled
+                            background: Rectangle {
+                                border {
+                                    width: 1
+                                    color: originMovementFormula.valid ? "darkgray" : "red"
+                                }
+                            }
+                            onTextChanged: originMovementFormula.text = originMovementField.text
                         }
                     }
                 }
@@ -362,7 +407,7 @@ ApplicationWindow {
 
                         LineSeries {
                             id: dragSeries
-                            name: "Drag"
+                            name: "Dump"
                             axisX: forceTimeAxis
                             axisY: forceYAxis
                             useOpenGL: true
@@ -424,7 +469,8 @@ ApplicationWindow {
         Visualization {
             id: visualization
             running: simulator.running
-            springLength: 10 + simulator.position
+            springLength: 10 + simulator.position + simulator.originPosition
+            basePosition: simulator.originPosition
 
             width: 250
             anchors {
@@ -436,7 +482,7 @@ ApplicationWindow {
         Item {
             id: bottomGraphs
 
-            height: 300
+            height: 600
 
             anchors {
                 left: leftPaneContainer.right
@@ -525,6 +571,12 @@ ApplicationWindow {
             forceYAxis.max = Math.max(forceYAxis.max, simulator.flexForce, simulator.dampingForce, simulator.externalForce)
 
             cspaceSeries.append(simulator.position, simulator.velocity)
+
+            positionAxis.min = Math.min(positionAxis.min, simulator.position);
+            positionAxis.max = Math.max(positionAxis.max, simulator.position);
+
+            velocityAxis.min = Math.min(velocityAxis.min, simulator.velocity);
+            velocityAxis.max = Math.max(velocityAxis.max, simulator.velocity);
 
         }
     }
