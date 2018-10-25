@@ -14,6 +14,16 @@ import Qt3D.Extras 2.0
 import Catu 1.0 as Catu
 
 ApplicationWindow {
+        function fileName(file){
+            var s
+            if (file.startsWith("file:///")) {
+                var k = file.charAt(9) === ':' ? 8 : 7
+                s = file.substring(k)
+            } else {
+                s =file 
+            }
+            return decodeURIComponent(s);
+        }
     visible: true
     title: "Catu"
 
@@ -40,7 +50,7 @@ ApplicationWindow {
         id: program
 
         function addFile(file){
-            console.log("Adding file: "+ file)
+            pathManager.AddPath(file)
         }
 
         function addTool(isSphere, radius){
@@ -49,6 +59,19 @@ ApplicationWindow {
 
 
         property bool running: true
+    }
+
+    Catu.ToolManager {
+        id: tools
+    }
+
+    Catu.PathManager {
+        id: pathManager
+        toolManager: tools
+        paths:[
+            Catu.Path {},
+            Catu.Path {}
+        ]
     }
     header: ToolBar {
         Row{
@@ -59,12 +82,15 @@ ApplicationWindow {
             ToolButton {
                 text: "Reset state"
                 onClicked: {
-                    program.running = !program.running
+                    pathManager.toggle()
                 }
             }
             ToolButton {
                 text: "Material options"
-                enabled: !program.running
+                enabled: pathManager.valid
+                onClicked: {
+                    pathManager.paths = []
+                }
             }
         }
     }
@@ -77,7 +103,76 @@ ApplicationWindow {
             bottom: parent.bottom
         }
         width: 200
-    } 
+        Rectangle {
+            id: header
+            anchors {
+                top: parent.top
+                left: parent.left
+                right: parent.right
+            }
+            radius: 2
+            color: "lightgray"
+            border {
+                width: 2
+                color: "white"
+            }
+            height: 40
+
+            Text {
+                text: "Paths"
+                width: parent.width
+                verticalAlignment: Text.AlignVCenter
+                horizontalAlignment: Text.AlignHCenter
+                font.pointSize: 24
+                font.bold: true
+                color: "gray"
+            }
+        }
+        Item{
+            anchors {
+                top: header.bottom
+                left:parent.left
+                right:parent.right
+                bottom:parent.bottom
+            }
+
+        Component {
+            id: toolViewDelegate
+            Rectangle{
+                anchors {
+                    left: parent.left
+                    right: parent.right
+                }
+                border {
+                    width: 2
+                    color: "gray"
+                }
+                color: "lightgray"
+                radius: 2
+                height: 60
+
+                Column{
+                    Text{
+                        text: {
+                            var txt = file.split('/');
+                            var name = txt[txt.length-1]
+                            return"file: "+ name
+                        }
+                    }
+                    Text{text: "tool radius: "+tool.radius}
+                    Text{text: "tool type: "+tool.type}
+                }
+            }
+        }
+
+        ListView{
+        
+            anchors.fill: parent
+            model: pathManager.paths
+            delegate: toolViewDelegate
+            spacing: 2
+        } // listView
+    } }
 
     Scene3D {
         id: visualization

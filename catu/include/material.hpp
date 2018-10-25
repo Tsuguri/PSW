@@ -8,17 +8,7 @@
 #include <Qt3DRender/QAttribute>
 
 #include <vector>
-
-struct vec2{
-    float u;
-    float v;
-};
-
-struct vec3{
-   float x;
-   float z;
-   float y;
-};
+#include "math/vec.hpp"
 
 struct vertex {
     vec3 position;

@@ -1,4 +1,4 @@
-#include "material.hpp"
+#include <material.hpp>
 #include <iostream>
 
 #include <Qt3DRender/QGeometryRenderer>
