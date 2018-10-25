@@ -75,6 +75,7 @@ ApplicationWindow {
                 text: "Reset state"
                 onClicked: {
                     pathManager.toggle()
+                    program.running = !program.running
                 }
             }
             ToolButton {
@@ -163,6 +164,7 @@ ApplicationWindow {
                     Text{text: "length: "+pathLength.toFixed(2)}
                 }
                 Button {
+                    enabled: !program.running
                     anchors {
                         top:parent.top
                         left: column.right
@@ -179,7 +181,6 @@ ApplicationWindow {
         }
 
         ListView{
-        
             anchors.fill: parent
             model: pathManager.paths
             delegate: toolViewDelegate
