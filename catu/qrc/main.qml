@@ -13,6 +13,7 @@ import Qt3D.Extras 2.0
 
 import Catu 1.0 as Catu
 
+
 ApplicationWindow {
         function fileName(file){
             var s
@@ -54,6 +55,7 @@ ApplicationWindow {
         }
 
         property bool running: true
+        property alias material: millingMaterial
     }
 
     Catu.ToolManager {
@@ -64,6 +66,89 @@ ApplicationWindow {
         id: pathManager
         toolManager: tools
         paths:[]
+    }
+
+    Popup {
+        id: materialConfigurationPopup
+        closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
+        modal:true
+        focus: true
+
+
+        width: parent.width - 400
+        height: 350
+
+        x: 200
+        y: 100
+        Rectangle {
+            anchors.fill: parent
+
+            GridLayout {
+                columns: 2
+                rows: 6
+                anchors.fill:parent
+
+                Text{
+                    text: "x resolution"
+                }
+                SpinBox {
+                    to: 1500
+                    from: 10
+                    value: 600
+                    editable: true
+                    Layout.fillWidth: true
+                }
+
+                Text {
+                    text: "z resolution"
+                }
+
+                SpinBox {
+                    to: 1500
+                    from: 10
+                    value: 600
+                    editable: true
+                    Layout.fillWidth: true
+                }
+                Text {
+                    text: "x size"
+                }
+
+                DoubleSpinBox {
+                    from: 10
+                    to: 1000
+                    value: 1500
+                    Layout.fillWidth: true
+                }
+                Text {
+                    text: "z size"
+                }
+                DoubleSpinBox {
+                    from: 10
+                    to: 1000
+                    value: 1500
+                    Layout.fillWidth: true
+                }
+                Text {
+                    text: "height"
+                }
+                DoubleSpinBox {
+                    from: 2
+                    to: 500
+                    value: 500
+                    Layout.fillWidth: true
+                }
+                Text {
+                    text: "milling stop"
+                }
+                DoubleSpinBox {
+                    from: 2
+                    to: 500
+                    value: 200
+                    Layout.fillWidth: true
+                }
+            }
+        }
     }
     header: ToolBar {
         Row{
@@ -80,9 +165,9 @@ ApplicationWindow {
             }
             ToolButton {
                 text: "Material options"
-                enabled: pathManager.valid
+                enabled: !program.running
                 onClicked: {
-                    pathManager.paths = []
+                    materialConfigurationPopup.open()
                 }
             }
         }
