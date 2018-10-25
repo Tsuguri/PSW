@@ -3,6 +3,7 @@
 #include <map>
 #include <iostream>
 #include <fstream>
+#include <cmath>
 
 namespace GCode{
 
@@ -11,6 +12,14 @@ namespace GCode{
 
     void G01Command::Execute() const {
         
+    }
+
+    float G01Command::GetLength() const {
+        float x = _x ? (*_x)*(*_x) : 0.0f;
+        float y = _y ? (*_y)*(*_y) : 0.0f;
+        float z = _z ? (*_z)*(*_z) : 0.0f;
+
+        return std::sqrt(x+y+x);
     }
 
     G01Command::~G01Command(){}

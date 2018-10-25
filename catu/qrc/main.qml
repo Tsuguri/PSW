@@ -42,21 +42,16 @@ ApplicationWindow {
         selectFolder: false
         selectMultiple: false
         onAccepted: {
-            program.addFile(openFileDialog.fileUrl)
+            pathManager.AddPath(openFileDialog.fileUrl)
         }
     }
 
     Item {
         id: program
 
-        function addFile(file){
-            pathManager.AddPath(file)
-        }
-
         function addTool(isSphere, radius){
             console.log("Adding tool: "+ radius + " " + isSphere)
         }
-
 
         property bool running: true
     }
@@ -68,10 +63,7 @@ ApplicationWindow {
     Catu.PathManager {
         id: pathManager
         toolManager: tools
-        paths:[
-            Catu.Path {},
-            Catu.Path {}
-        ]
+        paths:[]
     }
     header: ToolBar {
         Row{
@@ -102,7 +94,7 @@ ApplicationWindow {
             top: parent.top
             bottom: parent.bottom
         }
-        width: 200
+        width: 250
         Rectangle {
             id: header
             anchors {
@@ -149,9 +141,16 @@ ApplicationWindow {
                 }
                 color: "lightgray"
                 radius: 2
-                height: 60
+                height: 80
 
                 Column{
+                    id: column
+                    width:200
+                    anchors {
+                        top: parent.top
+                        left:parent.left
+                        bottom:parent.bottom
+                    }
                     Text{
                         text: {
                             var txt = file.split('/');
@@ -161,6 +160,20 @@ ApplicationWindow {
                     }
                     Text{text: "tool radius: "+tool.radius}
                     Text{text: "tool type: "+tool.type}
+                    Text{text: "length: "+pathLength.toFixed(2)}
+                }
+                Button {
+                    anchors {
+                        top:parent.top
+                        left: column.right
+                        right: parent.right
+                        bottom: parent.bottom
+                    }
+                    text: "R"
+                    onClicked: {
+                        pathManager.RemovePath(index)
+                    }
+
                 }
             }
         }

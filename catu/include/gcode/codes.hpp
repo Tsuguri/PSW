@@ -13,6 +13,7 @@ using coord = std::optional<float>;
 class Command{
     public:
         virtual void Execute() const =0;
+        virtual float GetLength() const=0;
         virtual ~Command();
 };
 
@@ -24,6 +25,7 @@ class G01Command : public Command{
     public:
         G01Command(coord x, coord y, coord z);
         virtual void Execute() const override;
+        virtual float GetLength() const override;
         virtual ~G01Command() override;
 };
 

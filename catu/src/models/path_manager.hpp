@@ -29,7 +29,7 @@ class PathManager : public QObject {
     }
 
     Q_INVOKABLE void AddPath(QString filePath);
-    Q_INVOKABLE void RemovePath(Path* path);
+    Q_INVOKABLE void RemovePath(int path);
     QQmlListProperty<Path> getPaths();
 
 

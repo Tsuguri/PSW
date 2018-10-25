@@ -17,3 +17,7 @@ Mill::Mill(float radius, MillType type): _radius(radius), _type(type){}
 
         return "Unknown";
     }
+
+MillType Mill::type() const {
+    return _type;
+}

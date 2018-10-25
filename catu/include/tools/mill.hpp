@@ -19,6 +19,8 @@ class Mill : public QObject {
     float getRadius()const;
     QString getType() const;
 
+    MillType type() const;
+
     private:
     float _radius;
     MillType _type;

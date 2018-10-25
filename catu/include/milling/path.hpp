@@ -9,6 +9,7 @@ class Path: public QObject{
 
     Q_PROPERTY(QString file READ getFileName CONSTANT)
     Q_PROPERTY(Mill* tool READ getTool CONSTANT)
+    Q_PROPERTY(float pathLength READ getLength CONSTANT)
 
     public:
     explicit Path(QObject* parent = nullptr);
@@ -16,9 +17,11 @@ class Path: public QObject{
 
         QString getFileName() const;
         Mill* getTool() const;
+        float getLength() const;
 
     private:
-        QString _file = "heheszki";
-        Mill* _tool = nullptr;
+        QString _file;
+        Mill* _tool;
         GCode::Program _program;
+        float _length;
 };
