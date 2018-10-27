@@ -89,6 +89,7 @@ ApplicationWindow {
         id: millingManager
         paths: pathManager
         tools: tools
+        material: millingMaterial
     }
 
     MessageDialog {
@@ -302,7 +303,8 @@ ApplicationWindow {
     } // material popup
     
     header: ToolBar {
-        Row{
+        RowLayout{
+            anchors.fill:parent
             ToolButton {
                 text: "Load path"
                 enabled: !millingManager.running
@@ -322,6 +324,8 @@ ApplicationWindow {
                     toolConfigurationPopup.open()
                 }
             } // tools button
+
+            ToolSeparator{}
             ToolButton {
                 text: "Run"
                 enabled: pathManager.valid
@@ -334,16 +338,24 @@ ApplicationWindow {
             }
             ToolButton {
                 text: "Stop"
-                enabled: millingManager.active
+                enabled: millingManager.running
                 onClicked: millingManager.Stop()
             }
+            ToolSeparator{}
+
+            Item {
+                Layout.fillWidth:true
+            }
+            ToolSeparator{}
 
             CheckBox {
+                Layout.alignment: Qt.AlignRight
                 id: renderMaterialBox
                 text: "Render material"
                 checked: true
             }
             CheckBox {
+                Layout.alignment: Qt.AlignRight
                 id: renderPathsBox
                 text: "Render paths"
                 checked: true
@@ -428,7 +440,7 @@ ApplicationWindow {
                     Text{text: "length: "+pathLength.toFixed(2)}
                 }
                 Button {
-                    enabled: !program.running
+                    enabled: !millingManager.running
                     anchors {
                         top:parent.top
                         left: column.right
@@ -512,6 +524,25 @@ ApplicationWindow {
                 xExtent: 300
                 yExtent: 1
                 zExtent: 300
+            }
+
+            SphereMesh {
+                id: toolMesh
+                radius: 2
+            }
+
+            Transform {
+                id: toolTranslation
+                translation: {
+                    var p = millingManager.toolpos
+                    return Qt.vector3d(p.x, p.y+2, p.z);
+                }
+            }
+
+            Entity {
+                id: toolEntity
+                enabled: millingManager.running
+                components: [toolMesh, tableMaterial, toolTranslation]
             }
 
             Entity {

@@ -26,6 +26,8 @@ class Path: public QObject{
         float getLength() const;
         unsigned int points() const;
 
+    GCode::Command* getCommand(unsigned int id) const;
+
     private:
         QString _file;
         Mill* _tool;

@@ -10,23 +10,27 @@ namespace GCode{
     Command::~Command(){}
     G01Command::G01Command(coord x, coord y, coord z): _x(x), _y(y), _z(z){}
 
-    void G01Command::Execute() const {
-        
-    }
-
     float G01Command::GetLength() const {
         float x = _x ? (*_x)*(*_x) : 0.0f;
         float y = _y ? (*_y)*(*_y) : 0.0f;
         float z = _z ? (*_z)*(*_z) : 0.0f;
 
-        return std::sqrt(x+y+x);
+        return std::sqrt(x+y+z);
     }
 
     Movement G01Command::GetMovement() const {
         return  Movement(_x,_y,_z);
-
     }
 
+
+    vec3 G01Command::MoveFrom(vec3 actualPos) const {
+        auto to = actualPos;
+        to.x += (_x ? *_x : to.x);
+        to.y += (_y ? *_y : to.y);
+        to.z += (_z ? *_z : to.z);
+
+        return vec3{to.x-actualPos.x, to.y-actualPos.y, to.z-actualPos.z};
+    }
     G01Command::~G01Command(){}
     /*void G00Command::Execute() const {
     

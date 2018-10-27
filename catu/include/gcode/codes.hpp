@@ -20,9 +20,9 @@ struct Movement {
 
 class Command{
     public:
-        virtual void Execute() const =0;
         virtual float GetLength() const=0;
         virtual Movement GetMovement() const=0;
+        virtual vec3 MoveFrom(vec3 actualPos) const =0;
         virtual ~Command();
 };
 
@@ -33,9 +33,9 @@ class G01Command : public Command{
     coord _z;
     public:
         G01Command(coord x, coord y, coord z);
-        virtual void Execute() const override;
         virtual float GetLength() const override;
         virtual Movement GetMovement() const override;
+        virtual vec3 MoveFrom(vec3 actualPos) const override;
         virtual ~G01Command() override;
 };
 

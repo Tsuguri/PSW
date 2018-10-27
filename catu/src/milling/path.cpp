@@ -45,3 +45,7 @@ void Path::enumeratePositions(pathDelegate lamb) const{
         lamb(pos);
     }
 }
+
+GCode::Command* Path::getCommand(unsigned int id) const {
+    return _program[id].get();
+}

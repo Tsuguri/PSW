@@ -82,7 +82,7 @@ Material::Material(Qt3DCore::QEntity *parent) : Qt3DCore::QEntity(parent), modif
   resize(150.0f, 150.0f, 50.0f, 300, 300);
 }
 void Material::resize(float xSize, float ySize, float height, unsigned int xResolution, unsigned int yResolution){
-    this->gridSize = vec3{xSize, height, ySize};
+    this->gridSize = vec3{xSize, ySize, height};
     this->xRes = xResolution;
     this->yRes = yResolution;
 
@@ -108,8 +108,8 @@ void Material::resize(float xSize, float ySize, float height, unsigned int xReso
     for(unsigned int x = 0; x<xVerts; x++){
         for(unsigned int y = 0; y<yVerts; y++){
             auto& vert = buffer[y*xVerts + x];
-            vert.position = vec3{xFrom + x*xd, height, yFrom + y*yd};
-            vert.normal = vec3{0.0f, 1.0f, 0.0f};
+            vert.position = vec3{xFrom + x*xd, yFrom + y*yd, height};
+            vert.normal = vec3{0.0f, 0.0f, 1.0f};
             vert.texCoord = vec2{x*xd / gridSize.x, y*yd / gridSize.y};
         }
     }
@@ -140,29 +140,29 @@ void Material::resize(float xSize, float ySize, float height, unsigned int xReso
 
     for(unsigned int x = 0; x<xVerts; x++){
         auto xPos = xFrom + x*xd;
-        minusYbottom[x].position = vec3{xPos, 0, yFrom};
-        minusYbottom[x].normal = vec3{0, 0, -1};
+        minusYbottom[x].position = vec3{xPos, yFrom, 0};
+        minusYbottom[x].normal = vec3{0, -1, 0};
         minusYbottom[x].texCoord = vec2{x*xd/gridSize.x, 0};
-        minusYup[x].position = vec3{xPos, height, yFrom};
-        minusYup[x].normal = vec3{0, 0, -1};
+        minusYup[x].position = vec3{xPos, yFrom, height};
+        minusYup[x].normal = vec3{0, -1, 0};
         minusYup[x].texCoord = vec2{x*xd/gridSize.x, 1};
-        plusYbottom[x].position = vec3{xPos, 0, -yFrom};
-        plusYbottom[x].normal = vec3{0, 0, 1};
+        plusYbottom[x].position = vec3{xPos, -yFrom, 0};
+        plusYbottom[x].normal = vec3{0, 1, 0};
         plusYbottom[x].texCoord = vec2{x*xd/gridSize.x, 0};
-        plusYup[x].position = vec3{xPos, height, -yFrom};
-        plusYup[x].normal = vec3{0, 0, 1};
+        plusYup[x].position = vec3{xPos, -yFrom, height};
+        plusYup[x].normal = vec3{0, 1, 0};
         plusYup[x].texCoord = vec2{x*xd/gridSize.x, 1};
     }
 
     for(unsigned int y = 0; y<yVerts; y++){
         auto yPos = yFrom + y*yd;
-        minusXbottom[y].position =vec3{xFrom, 0, yPos};
+        minusXbottom[y].position =vec3{xFrom, yPos, 0};
         minusXbottom[y].normal = vec3{-1, 0, 0};
         minusXbottom[y].texCoord = vec2{y*yd/gridSize.y, 0};
-        minusXup[y].position =vec3{xFrom, height, yPos};
+        minusXup[y].position =vec3{xFrom, yPos, height};
         minusXup[y].normal = vec3{-1, 0, 0};
         minusXup[y].texCoord = vec2{y*yd/gridSize.y, 1};
-        plusXbottom[y].position =vec3{-xFrom, 0, yPos};
+        plusXbottom[y].position =vec3{-xFrom, yPos, 0};
         plusXbottom[y].normal = vec3{1, 0, 0};
         plusXbottom[y].texCoord = vec2{y*yd/gridSize.y, 0};
         plusXup[y].position =vec3{-xFrom, height, yPos};
@@ -233,6 +233,22 @@ void Material::resize(float xSize, float ySize, float height, unsigned int xReso
 
     modified = false;
     emit modifiedChanged();
+}
+
+void Material::sendVertices() {
+    //if(modified)
+    vbo->setData(QByteArray(reinterpret_cast<const char*>(buffer.data()), static_cast<int>(buffer.size() * sizeof(vertex))));
+}
+
+void Material::mill(Mill* tool, vec3 from, vec3 to, bool updateBuffer) {
+    auto radius = tool->getRadius();
+    std::function<float(int, int)> lamb;
+    if (tool->type() == MillType::Flat){
+        lamb = [radius](float distance, int z) { return 0.0;};
+    }
+
+    std::cout<<"tool "<<tool->getRadius()<<" "<<tool->getType().toStdString()<<" to: "<<to.x<<" "<<to.y<<" "<<to.z<<std::endl;
+    sendVertices();
 }
 
 bool Material::isModified() const {

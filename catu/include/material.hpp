@@ -8,7 +8,8 @@
 #include <Qt3DRender/QAttribute>
 
 #include <vector>
-#include "math/vec.hpp"
+#include <tools/mill.hpp>
+#include <math/vec.hpp>
 
 struct vertex {
     vec3 position;
@@ -32,9 +33,12 @@ class Material : public Qt3DCore::QEntity {
 
         bool isModified() const;
 
+        void mill(Mill* tool, vec3 from, vec3 to, bool updateBuffer = true);
+
     private:
 
         void resize(float xSize, float ySize, float height, unsigned int xResolution, unsigned int yResolution);
+        void sendVertices();
 
         bool modified;
         std::vector<vertex> buffer;
