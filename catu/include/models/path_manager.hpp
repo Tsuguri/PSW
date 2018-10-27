@@ -1,11 +1,11 @@
 #pragma once
 #include <iostream>
 
-#include<QObject>
+#include <QObject>
 #include <QQmlListProperty>
 
 #include <milling/path.hpp>
-#include "tool_manager.hpp"
+#include <models/tool_manager.hpp>
 
 
 class PathManager : public QObject {
@@ -18,15 +18,10 @@ class PathManager : public QObject {
     public:
     explicit PathManager();
     bool getValid() const {
-        return _valid;
+        return true;
     }
 
     void setToolManager(ToolManager* manager);
-
-    Q_INVOKABLE void toggle(){
-        _valid = !_valid;
-        emit validChanged();
-    }
 
     Q_INVOKABLE void AddPath(QString filePath);
     Q_INVOKABLE void RemovePath(int path);
@@ -49,7 +44,6 @@ private:
     static Path* path(QQmlListProperty<Path>* prop, int);
     static void clearPaths(QQmlListProperty<Path>* prop);
 
-    bool _valid;
     std::vector<Path*> _paths;
     ToolManager* _toolManager;
 };

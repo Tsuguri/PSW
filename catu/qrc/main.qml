@@ -15,6 +15,7 @@ import Catu 1.0 as Catu
 
 
 ApplicationWindow {
+    id: mainWindow
         function fileName(file){
             var s
             if (file.startsWith("file:///")) {
@@ -33,6 +34,17 @@ ApplicationWindow {
 
     minimumWidth: 1000
     minimumHeight: 600
+
+    Shortcut {
+        sequence: "Ctrl+w"
+        onActivated: mainWindow.close()
+    }
+
+    Shortcut {
+        sequence: "Ctrl+t"
+        onActivated: openFileDialog.open()
+        enabled: !millingManager.active
+    }
 
 
     FileDialog {
@@ -54,12 +66,17 @@ ApplicationWindow {
             console.log("Adding tool: "+ radius + " " + isSphere)
         }
 
-        property bool running: true
+        property bool materialVisible: true
+        property bool pathsVisible: true
         property alias material: millingMaterial
     }
 
     Catu.ToolManager {
         id: tools
+
+        tools: [
+            Catu.Mill {}
+        ]
     }
 
     Catu.PathManager {
@@ -67,6 +84,128 @@ ApplicationWindow {
         toolManager: tools
         paths:[]
     }
+
+    Catu.MillingManager {
+        id: millingManager
+        paths: pathManager
+        tools: tools
+    }
+
+    MessageDialog {
+        id: materialResetConfirmationDialog
+        title: "Material contains milled areas"
+        text: "Are you sure you want to reset material? It will destroy all modified areas"
+        standardButtons: StandardButton.Yes | StandardButton.Abort
+        onYes: {
+            console.log("Destroying material")
+        }
+        onRejected: {
+            console.log("not destroying material")
+        }
+    }
+    
+    Popup {
+        id: toolConfigurationPopup
+        closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
+        modal: true
+        focus: true
+
+        width: parent.width - 600
+        height: 650
+        x: 300
+        y: 100
+        Rectangle {
+            anchors.fill: parent
+            
+            Component {
+                id: toolDelegate
+
+                Rectangle{
+                    anchors {
+                        left: parent.left
+                        right: parent.right
+                    }
+                    border {
+                        width: 2
+                        color: "gray"
+                    }
+                    color: "lightgray"
+                    radius: 2
+                    height: 80
+
+                    GridLayout {
+                        anchors.fill: parent
+                        columns: 4
+                        anchors.margins: 4
+
+                        Text{
+                            width: 100
+                            horizontalAlignment: Text.AlignHCenter
+                            text: toolRadius
+                        }
+                        Text{
+                            Layout.fillWidth: true
+                            horizontalAlignment: Text.AlignHCenter
+                            text: type
+                        }
+                        Text{
+                            Layout.fillWidth: true
+                        }
+                        Button{
+                            text: "Remove"
+                            enabled: !inUse
+                            onClicked: tools.RemoveTool(index)
+                            padding: 2
+                            implicitWidth: 100
+                            background: Rectangle {
+                                radius: 2
+                                color: "lightgray"
+                                border {
+                                    width: 2
+                                    color: "gray"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            GridLayout {
+                id:addToolButton
+                columns: 3
+                ComboBox {
+                    id: newToolType
+                    model: ["Spheric", "Flat"]
+                }
+                SpinBox {
+                    id: newToolRadius
+                    to: 100
+                    from: 1
+                    value: 10
+                    editable: true
+                    Layout.fillWidth: true
+
+                }
+                Button {
+                    text: "Add tool"
+                    onClicked: {
+                        tools.AddTool(newToolRadius.value, newToolType.currentIndex)
+                    }
+                }
+            }
+            ListView{
+                anchors {
+                    left: parent.left
+                    top: addToolButton.bottom
+                    right: parent.right
+                    bottom: parent.bottom
+                }
+                model: tools.tools
+                delegate: toolDelegate
+                spacing: 2
+            } // listview
+        } // rectangle
+    }// tool conf popup
 
     Popup {
         id: materialConfigurationPopup
@@ -85,7 +224,7 @@ ApplicationWindow {
 
             GridLayout {
                 columns: 2
-                rows: 6
+                rows: 7
                 anchors.fill:parent
 
                 Text{
@@ -147,31 +286,70 @@ ApplicationWindow {
                     value: 200
                     Layout.fillWidth: true
                 }
-            }
-        }
-    }
+
+                Button {
+                    text: "Apply"
+                    onClicked: {
+                        //if(millingMaterial.modified) {
+                            materialResetConfirmationDialog.open()
+                        //} else {
+                            // apply material data
+                        //}
+                    }
+                } // button
+            } // grid
+        } //rectangle
+    } // material popup
+    
     header: ToolBar {
         Row{
             ToolButton {
-                text: "Load file"
+                text: "Load path"
+                enabled: !millingManager.running
                 onClicked: openFileDialog.open()
             }
             ToolButton {
-                text: "Reset state"
-                onClicked: {
-                    pathManager.toggle()
-                    program.running = !program.running
-                }
-            }
-            ToolButton {
                 text: "Material options"
-                enabled: !program.running
+                enabled: !millingManager.running
                 onClicked: {
                     materialConfigurationPopup.open()
                 }
             }
-        }
-    }
+            ToolButton {
+                text: "Tools"
+                enabled: !millingManager.running
+                onClicked: {
+                    toolConfigurationPopup.open()
+                }
+            } // tools button
+            ToolButton {
+                text: "Run"
+                enabled: pathManager.valid
+                onClicked: millingManager.Run()
+            }
+            ToolButton {
+                text: "Pause"
+                enabled: millingManager.active
+                onClicked: millingManager.Pause()
+            }
+            ToolButton {
+                text: "Stop"
+                enabled: millingManager.active
+                onClicked: millingManager.Stop()
+            }
+
+            CheckBox {
+                id: renderMaterialBox
+                text: "Render material"
+                checked: true
+            }
+            CheckBox {
+                id: renderPathsBox
+                text: "Render paths"
+                checked: true
+            }
+        } // row
+    } // header toolbar
 
     Item {
         id: leftPanel
@@ -236,6 +414,7 @@ ApplicationWindow {
                         top: parent.top
                         left:parent.left
                         bottom:parent.bottom
+                        margins: 3
                     }
                     Text{
                         text: {
@@ -244,7 +423,7 @@ ApplicationWindow {
                             return"file: "+ name
                         }
                     }
-                    Text{text: "tool radius: "+tool.radius}
+                    Text{text: "tool radius: "+tool.toolRadius}
                     Text{text: "tool type: "+tool.type}
                     Text{text: "length: "+pathLength.toFixed(2)}
                 }
@@ -260,10 +439,12 @@ ApplicationWindow {
                     onClicked: {
                         pathManager.RemovePath(index)
                     }
+                    ToolTip.text: "Remove this path from program"
+                    ToolTip.visible: hovered
 
                 }
             }
-        }
+        } // toolViewDelegate
 
         ListView{
             anchors.fill: parent
@@ -324,6 +505,7 @@ ApplicationWindow {
 
             GoochMaterial {
                 id: tableMaterial
+                cool: "lightgreen"
             }
             CuboidMesh {
                 id: tableMesh
@@ -339,6 +521,13 @@ ApplicationWindow {
 
             Catu.Material {
                 id: millingMaterial
+                enabled: renderMaterialBox.checked
+            }
+
+            Catu.PathRender {
+                id: renderedPaths
+                paths: pathManager
+                enabled: renderPathsBox.checked
             }
 
         } // root Entity

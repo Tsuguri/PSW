@@ -6,7 +6,7 @@
 
 #include <QTextureImage>
 
-Material::Material(Qt3DCore::QEntity *parent) : Qt3DCore::QEntity(parent) {
+Material::Material(Qt3DCore::QEntity *parent) : Qt3DCore::QEntity(parent), modified(false) {
   auto geometry_renderer = new Qt3DRender::QGeometryRenderer(this);
   auto geometry = new Qt3DRender::QGeometry(geometry_renderer);
 
@@ -230,4 +230,11 @@ void Material::resize(float xSize, float ySize, float height, unsigned int xReso
     positionAttr->setCount(vertices);
     uvAttr->setCount(vertices);
     normalAttr->setCount(vertices);
+
+    modified = false;
+    emit modifiedChanged();
+}
+
+bool Material::isModified() const {
+    return modified;
 }

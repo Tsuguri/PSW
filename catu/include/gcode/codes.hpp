@@ -10,10 +10,19 @@ namespace GCode{
 
 using coord = std::optional<float>;
 
+struct Movement {
+    coord x;
+    coord y;
+    coord z;
+    Movement(coord x, coord y, coord z) : x(x), y(y), z(z){}
+};
+
+
 class Command{
     public:
         virtual void Execute() const =0;
         virtual float GetLength() const=0;
+        virtual Movement GetMovement() const=0;
         virtual ~Command();
 };
 
@@ -26,6 +35,7 @@ class G01Command : public Command{
         G01Command(coord x, coord y, coord z);
         virtual void Execute() const override;
         virtual float GetLength() const override;
+        virtual Movement GetMovement() const override;
         virtual ~G01Command() override;
 };
 

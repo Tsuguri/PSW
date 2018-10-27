@@ -1,10 +1,10 @@
-#include "path_manager.hpp"
+#include <models/path_manager.hpp>
 #include <gcode/codes.hpp>
 #include <QUrl>
 #include <QMessageBox>
 
 
-PathManager::PathManager(): _valid(false), _paths(), _toolManager(nullptr){
+PathManager::PathManager(): _paths(), _toolManager(nullptr){
 
 }
 

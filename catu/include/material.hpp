@@ -26,14 +26,17 @@ class Material : public Qt3DCore::QEntity {
     Q_OBJECT
 
 
+        Q_PROPERTY(bool modified READ isModified NOTIFY modifiedChanged);
     public:
         explicit Material(Qt3DCore::QEntity* parent = nullptr);
 
+        bool isModified() const;
 
     private:
 
         void resize(float xSize, float ySize, float height, unsigned int xResolution, unsigned int yResolution);
 
+        bool modified;
         std::vector<vertex> buffer;
         vertex* minusXbottom;
         vertex* minusYbottom;
@@ -57,5 +60,7 @@ class Material : public Qt3DCore::QEntity {
         Qt3DRender::QAttribute* normalAttr;
         Qt3DRender::QAttribute* uvAttr;
         Qt3DRender::QAttribute* indexAttr;
+signals:
+        void modifiedChanged();
 };
 #endif

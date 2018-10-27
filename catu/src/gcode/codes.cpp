@@ -22,6 +22,11 @@ namespace GCode{
         return std::sqrt(x+y+x);
     }
 
+    Movement G01Command::GetMovement() const {
+        return  Movement(_x,_y,_z);
+
+    }
+
     G01Command::~G01Command(){}
     /*void G00Command::Execute() const {
     
@@ -41,7 +46,7 @@ namespace GCode{
         if(values.count('Z')){
             z = values.at('Z');
         }
-        return std::unique_ptr<Command>(new G01Command(x,y,x));
+        return std::unique_ptr<Command>(new G01Command(x,y,z));
     }
 
     std::unique_ptr<Command> ParseLine(const std::string& line){
