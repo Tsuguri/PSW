@@ -108,15 +108,6 @@ void MillingManager::PerformStep(vec3 from, vec3 to, Mill* tool, bool updateBuff
     _currentPos = to;
     emit toolPosChanged();
 }
-
-template<typename T>
-T inter(T from, T to, float t) {
-    return from*(1-t) + to * t;
-}
-vec3 Interpolate(vec3 from, vec3 to, float t) {
-    return vec3{inter(from.x, to.x, t),inter(from.y, to.y, t),inter(from.z, to.z, t)};
-}
-
 void MillingManager::timerTick(){
     auto time = _elapsed->restart();
 
@@ -145,14 +136,14 @@ void MillingManager::timerTick(){
             if(d.currentCommand >= d.paths->path(d.currentPath)->points()) {
                 d.currentCommand=1;
                 d.currentPath++;
-                _currentPos = d.paths->path(d.currentPath)->getCommand(0)->MoveFrom(vec3{});
-                emit toolPosChanged();
                 if(d.currentPath >= d.paths->pathsCount()) {
                     _running = _active = false;
                     emit runningChanged();
                     emit activeChanged();
                     return;
                 }
+                _currentPos = d.paths->path(d.currentPath)->getCommand(0)->MoveFrom(vec3{});
+                emit toolPosChanged();
             }
 
         }

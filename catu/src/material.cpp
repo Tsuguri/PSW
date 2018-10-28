@@ -79,7 +79,7 @@ Material::Material(Qt3DCore::QEntity *parent) : Qt3DCore::QEntity(parent), modif
   this->addComponent(transform);
 
   //regenerate(xExtent, zExtent, height, xCells, zCells, 0);
-  resize(150.0f, 150.0f, 50.0f, 300, 300);
+  resize(150.0f, 150.0f, 50.0f, 1000, 1000);
 }
 void Material::resize(float xSize, float ySize, float height, unsigned int xResolution, unsigned int yResolution){
     this->gridSize = vec3{xSize, ySize, height};
@@ -165,7 +165,7 @@ void Material::resize(float xSize, float ySize, float height, unsigned int xReso
         plusXbottom[y].position =vec3{-xFrom, yPos, 0};
         plusXbottom[y].normal = vec3{1, 0, 0};
         plusXbottom[y].texCoord = vec2{y*yd/gridSize.y, 0};
-        plusXup[y].position =vec3{-xFrom, height, yPos};
+        plusXup[y].position =vec3{-xFrom, yPos, height};
         plusXup[y].normal = vec3{1, 0, 0};
         plusXup[y].texCoord = vec2{y*yd/gridSize.y, 1};
     }
@@ -240,14 +240,149 @@ void Material::sendVertices() {
     vbo->setData(QByteArray(reinterpret_cast<const char*>(buffer.data()), static_cast<int>(buffer.size() * sizeof(vertex))));
 }
 
-void Material::mill(Mill* tool, vec3 from, vec3 to, bool updateBuffer) {
-    auto radius = tool->getRadius();
-    std::function<float(int, int)> lamb;
-    if (tool->type() == MillType::Flat){
-        lamb = [radius](float distance, int z) { return 0.0;};
+vec3 Material::trans(vec3 pos) {
+    pos.x +=gridSize.x/2.0f;
+    pos.y +=gridSize.y/2.0f;
+
+    return pos;
+    
+}
+
+void Material::setHeight(int x, int y, float height){
+
+    // dodać frezowanie krawędzi
+    auto h =buffer[y*(xRes+1)+x].position.z;
+    h = std::min(h, height);
+    //std::cout<<"h: "<<h<<std::endl;
+    buffer[y*(xRes+1)+x].position.z = h;
+
+    if(x==0){
+        minusXup[y].position.z = h;
+        //minusXup[y].texCoord.v = h/gridSize.z;
+    } else if (x== xRes+1){
+        plusXup[y].position.z = h;
+        //plusXup[y].texCoord.v = h/gridSize.z;
+    
     }
 
-    std::cout<<"tool "<<tool->getRadius()<<" "<<tool->getType().toStdString()<<" to: "<<to.x<<" "<<to.y<<" "<<to.z<<std::endl;
+    if(y==0){
+        minusYup[x].position.z = h;
+        minusYup[x].texCoord.v = h/gridSize.z;
+    } else if (y== yRes){
+        std::cout<<"from "<<plusYup[x].position.z<<" to "<<h<<std::endl;
+        plusYup[x].position.z = h;
+        //plusYup[x].texCoord.v = h/gridSize.z;
+    
+    }
+}
+
+void Material::updateNormal(int x, int y) {
+    vec3 normal{};
+    auto negX = x>0;
+    auto posX = x<xRes;
+    auto negY = y>0;
+    auto posY = y<yRes;
+
+    auto pos = buffer[y*(xRes+1)+x].position;
+
+    if(negX && negY){
+        normal= normal + Cross((buffer[(y-1)*(xRes+1)+(x)].position - pos).normalized(), 
+                               (buffer[(y)*(xRes+1) + (x -1)].position-pos).normalized());
+    }
+    if(negX && posY){
+        normal= normal + Cross((buffer[(y)*(xRes+1)+(x-1)].position - pos).normalized(), 
+                               (buffer[(y+1)*(xRes+1) + (x)].position-pos).normalized());
+    }
+    if(posX && posY){
+        normal= normal + Cross((buffer[(y+1)*(xRes+1)+(x)].position - pos).normalized(), 
+                               (buffer[(y)*(xRes+1) + (x +1)].position-pos).normalized());
+    }
+    if(posX && negY){
+        normal= normal + Cross((buffer[(y)*(xRes+1)+(x+1)].position - pos).normalized(), 
+                               (buffer[(y-1)*(xRes+1) + (x)].position-pos).normalized());
+    }
+    normal = vec3{} - normal.normalized();
+    buffer[y*(xRes+1)+x].normal = normal;
+
+}
+
+void Material::updateNormals() {
+    for(int x = 0; x<xRes+1; x++){
+        for(int y = 0; y<yRes+1; y++){
+            updateNormal(x,y);
+        }
+    }
+
+}
+
+void Material::millPlace(vec3 pos, float radius, const std::function<float(float, float)>& heightLamb) {
+    auto materialSpace = trans(pos);
+    if(materialSpace.x + radius < 0 || materialSpace.x - radius > gridSize.x || materialSpace.y + radius <0 || materialSpace.y - radius > gridSize.y){
+        //mill outside of material, no milling
+        return;
+    }
+    auto dx = gridSize.x / (xRes+1);
+    auto dy = gridSize.y / (yRes+1);
+    int rdx = radius/dx; // number of grains in radius along x axis;
+    int rdy = radius/dy; // number of grains in radius along y axis;
+    int px = materialSpace.x / dx;
+    int py = materialSpace.y / dy;
+    //std::cout<<"milling at: "<<px<<" "<<py<<" rdx "<<rdx<<" rdy "<<rdy<<std::endl;
+    float r2 = radius*radius;
+
+    for(int x = px - rdx; x<=px+rdx; x++) {
+        for(int y = py - rdy; y<=py+rdy; y++) {
+            if(x<0 || y<0 || x>xRes+1 || y>yRes+1) {
+                //std::cout<<"discarded "<<x<<" "<<y<<std::endl;
+                continue;
+            }
+            // mill if in radius.
+            auto distx = std::abs(x-px)* dx;
+            auto disty = std::abs(y-py)* dy;
+            auto dist2 = distx*distx + disty*disty;
+            if(dist2< r2) {
+                auto h = heightLamb(std::sqrt(dist2), pos.z);
+                setHeight(x,y, h);
+            }
+                
+        }
+    }
+    
+    for(int x = px - rdx; x<=px+rdx; x++) {
+        for(int y = py - rdy; y<=py+rdy; y++) {
+            if(x<0 || y<0 || x>xRes+1 || y>yRes+1) {
+                //std::cout<<"discarded "<<x<<" "<<y<<std::endl;
+                continue;
+            }
+            updateNormal(x,y);
+        }
+    }
+
+}
+
+void Material::mill(Mill* tool, vec3 from, vec3 to, bool updateBuffer) {
+    auto radius = tool->getRadius();
+    std::function<float(float, float)> lamb;
+    if (tool->type() == MillType::Flat){
+        lamb = [radius](float distance, float h) { return h;};
+    } else {
+        lamb = [radius](float distance, float h) {return h+radius-std::sqrt(radius*radius - distance*distance);};
+    }
+
+    auto vect = to-from;
+    auto dist = vect.len();
+    auto len = tool->getRadius()/6;
+    auto steps = dist/len;
+    for(unsigned int i=0;i<steps; i++) {
+        auto pos = Interpolate(from, to, i*len/dist);
+        millPlace(pos, tool->getRadius()/2, lamb);
+    }
+
+    //millPlace(from, tool->getRadius()/2, lamb);
+
+
+    //std::cout<<"tool "<<tool->getRadius()<<" "<<tool->getType().toStdString()<<" to: "<<to.x<<" "<<to.y<<" "<<to.z<<std::endl;
+    //updateNormals();
     sendVertices();
 }
 

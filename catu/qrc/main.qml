@@ -328,7 +328,7 @@ ApplicationWindow {
             ToolSeparator{}
             ToolButton {
                 text: "Run"
-                enabled: pathManager.valid
+                enabled: pathManager.valid && !millingManager.active
                 onClicked: millingManager.Run()
             }
             ToolButton {

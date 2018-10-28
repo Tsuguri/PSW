@@ -37,7 +37,12 @@ class Material : public Qt3DCore::QEntity {
 
     private:
 
+        void millPlace(vec3 pos, float radius, const std::function<float(float, float)>& lamb);
+        vec3 trans(vec3);
         void resize(float xSize, float ySize, float height, unsigned int xResolution, unsigned int yResolution);
+        void updateNormal(int x, int y);
+        void updateNormals();
+        void setHeight(int x, int y, float newHeight);
         void sendVertices();
 
         bool modified;
