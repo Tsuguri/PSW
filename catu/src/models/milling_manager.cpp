@@ -13,6 +13,7 @@ MillingManager::MillingManager(QObject* parent)
     _currentPos(),
     _totalLength(0),
     _tools(nullptr),
+    _downsideFlatMod(false),
     _paths(nullptr),
     _timer(new QTimer(this)),
     _elapsed(new QElapsedTimer()) {
@@ -35,6 +36,8 @@ void MillingManager::Run() {
         _running = true;
         _active = true;
         _progress = 0;
+        _downsideFlatMod = false;
+        emit downsideMill();
         _currentData.currentCommand=1;
         _currentPos = _paths->path(0)->getCommand(0)->MoveFrom(vec3{});
         _currentData.currentPath=0;
@@ -167,7 +170,12 @@ void MillingManager::setProgress(float progress) {
 
 void MillingManager::PerformStep(vec3 from, vec3 to, Mill* tool, bool updateBuffer ){
 
-    _material->mill(tool, from, to, updateBuffer);
+    if( _material->mill(tool, from, to, updateBuffer) && (to.z < from.z-0.0001)&& tool->type()==MillType::Flat) {
+        if(!_downsideFlatMod){
+            _downsideFlatMod=true;
+            emit downsideMill();
+        }
+    }
     _currentPos = to;
 }
 void MillingManager::timerTick(){

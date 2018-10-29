@@ -33,7 +33,7 @@ class Material : public Qt3DCore::QEntity {
 
         bool isModified() const;
 
-        void mill(Mill* tool, vec3 from, vec3 to, bool updateBuffer = true);
+        bool mill(Mill* tool, vec3 from, vec3 to, bool updateBuffer = true);
         void updateNormals();
         void updateNormals(float xFrom, float xTo, float yFrom, float yTo);
         void updateNormal(int x, int y);

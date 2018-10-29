@@ -358,6 +358,11 @@ ApplicationWindow {
                 text: "Progress: "+millingManager.progress.toFixed(2)
                 visible: millingManager.running
             }
+            Text {
+                text: "Milling error!"
+                visible: millingManager.error
+                color: "red"
+            }
             ToolSeparator{}
 
             Item {

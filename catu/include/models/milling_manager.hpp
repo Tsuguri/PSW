@@ -29,6 +29,7 @@ class MillingManager : public QObject {
     Q_PROPERTY(ToolManager* tools WRITE setTools);
     Q_PROPERTY(PathManager* paths WRITE setPaths);
     Q_PROPERTY(Material* material WRITE setMaterial);
+    Q_PROPERTY(bool error MEMBER _downsideFlatMod NOTIFY downsideMill);
 
     public:
     constexpr static int updateInterval = 50;
@@ -60,6 +61,7 @@ signals:
     void progressChanged();
     void totalLengthChanged();
     void toolPosChanged();
+    void downsideMill();
 
     private:
     void setProgress(float progress);
@@ -73,6 +75,7 @@ signals:
     vec3 _currentPos;
 
     float _totalLength;
+    bool _downsideFlatMod;
 
     QTimer* _timer;
     QElapsedTimer* _elapsed;

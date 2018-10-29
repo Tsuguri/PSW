@@ -294,10 +294,11 @@ vec3 Material::trans(vec3 pos) {
 void Material::setHeight(int x, int y, float height){
 
     auto h =buffer[y*(xRes+1)+x].position.z;
-    h = std::min(h, height);
-    //std::cout<<"h: "<<h<<std::endl;
-    buffer[y*(xRes+1)+x].position.z = h;
-    modified = true;
+    if(height < h) {
+        buffer[y*(xRes+1)+x].position.z = height;
+        modified = true;
+
+    }
 
     if(x==0){
         minusXup[y].position.z = h;
@@ -342,7 +343,6 @@ void Material::updateNormal(int x, int y) {
     auto posX = x<xRes;
     auto negY = y>0;
     auto posY = y<yRes;
-    modified=true;
 
     auto pos = buffer[y*(xRes+1)+x].position;
 
@@ -432,7 +432,7 @@ void Material::millPlace(vec3 pos, float radius, const std::function<float(float
 
 }
 
-void Material::mill(Mill* tool, vec3 from, vec3 to, bool updateBuffer) {
+bool Material::mill(Mill* tool, vec3 from, vec3 to, bool updateBuffer) {
     auto radius = tool->getRadius();
     std::function<float(float, float)> lamb;
     if (tool->type() == MillType::Flat){
@@ -449,6 +449,7 @@ void Material::mill(Mill* tool, vec3 from, vec3 to, bool updateBuffer) {
         auto pos = Interpolate(from, to, i*len/dist);
         millPlace(pos, tool->getRadius()/2, lamb);
     }
+    return modified;
 
     //millPlace(from, tool->getRadius()/2, lamb);
 
