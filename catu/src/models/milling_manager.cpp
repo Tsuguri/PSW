@@ -1,6 +1,7 @@
 #include <models/milling_manager.hpp>
 #include <cmath>
-#include <QThread>
+#include <QThreadPool>
+#include <QRunnable>
 
 
 MillingManager::MillingManager(QObject* parent)
@@ -39,6 +40,12 @@ void MillingManager::Run() {
         _currentData.currentPath=0;
         _currentData.paths=_paths;
         _currentData.lengthDoneInCurrent =0;
+
+        _totalLength=0;
+        for(int i=0; i<_paths->pathsCount(); i++) {
+        _totalLength += _paths->path(i)->points();
+        }
+
         _timer->start();
         _elapsed->start();
         emit progressChanged();
@@ -64,6 +71,55 @@ void MillingManager::Stop() {
     emit runningChanged();
 }
 
+class ToEnd : public QRunnable {
+    void run() override {
+        mgr->Finish();
+
+    }
+    public:
+    ToEnd(MillingManager* mgr) : mgr(mgr) {}
+
+    private:
+    MillingManager* mgr;
+};
+
+void MillingManager::Finish() {
+
+    auto& d = _currentData;
+
+    while(true){
+        auto mill = d.paths->path(d.currentPath)->getTool();
+        auto comm = d.paths->path(d.currentPath)->getCommand(d.currentCommand);
+        auto to = comm->MoveFrom(_currentPos);
+        _progress+=1;
+        emit progressChanged();
+        PerformStep(_currentPos, to, mill, false);
+        d.currentCommand++;
+        if(d.currentCommand >= d.paths->path(d.currentPath)->points()) {
+            d.currentCommand=1;
+            d.currentPath++;
+            if(d.currentPath >= d.paths->pathsCount()) {
+                _material->updateNormals();
+                _running = _active = false;
+                _timer->stop();
+                emit runningChanged();
+                emit activeChanged();
+                break;
+            }
+            _currentPos = d.paths->path(d.currentPath)->getCommand(0)->MoveFrom(vec3{});
+        }
+    }
+
+    _material->updateNormals();
+    _material->sendVertices(false);
+}
+
+void MillingManager::RunToEnd() {
+
+    _timer->stop();
+    QThreadPool::globalInstance()->start(new ToEnd(this));
+}
+
 bool MillingManager::isRunning() const {
     return _running;
 }
@@ -77,7 +133,7 @@ float MillingManager::getSpeed() const {
 }
 
 float MillingManager::getProgress() const {
-    return _progress;
+    return _progress/_totalLength;
 }
 
 float MillingManager::getTotalLength() const {
@@ -149,6 +205,7 @@ void MillingManager::timerTick(){
             timeToRun = 0;
         } else {
             PerformStep(_currentPos, to, mill);
+            _progress+=1;
             timeToRun -=len/(_speed*10);
             d.currentCommand++;
             if(d.currentCommand >= d.paths->path(d.currentPath)->points()) {
@@ -170,5 +227,6 @@ void MillingManager::timerTick(){
     _material->updateNormals(x1 - radius/2.0,x2+radius/2.0, y1-radius/2.0, y2+radius/2.0);
     _material->sendVertices();
     emit toolPosChanged();
+    emit progressChanged();
 
 }

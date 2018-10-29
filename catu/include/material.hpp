@@ -37,9 +37,10 @@ class Material : public Qt3DCore::QEntity {
         void updateNormals();
         void updateNormals(float xFrom, float xTo, float yFrom, float yTo);
         void updateNormal(int x, int y);
-        void sendVertices();
+        void sendVertices(bool wait=true);
 
         Q_INVOKABLE void resetHeights();
+        Q_INVOKABLE void setSizes(int xRes, int yRes, float x, float y, float h);
 
     private:
 

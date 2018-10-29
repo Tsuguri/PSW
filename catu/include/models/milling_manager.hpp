@@ -36,8 +36,11 @@ class MillingManager : public QObject {
     explicit MillingManager(QObject* parent = nullptr);
 
     Q_INVOKABLE void Run();
+    Q_INVOKABLE void RunToEnd();
     Q_INVOKABLE void Pause();
     Q_INVOKABLE void Stop();
+
+    void Finish();
 
     bool isRunning() const;
     bool isActive() const;

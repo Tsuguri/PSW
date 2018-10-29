@@ -232,6 +232,7 @@ ApplicationWindow {
                     text: "x resolution"
                 }
                 SpinBox {
+                    id: xRes
                     to: 1500
                     from: 10
                     value: 600
@@ -244,6 +245,7 @@ ApplicationWindow {
                 }
 
                 SpinBox {
+                    id: yRes
                     to: 1500
                     from: 10
                     value: 600
@@ -255,6 +257,7 @@ ApplicationWindow {
                 }
 
                 DoubleSpinBox {
+                    id: xSize
                     from: 10
                     to: 1000
                     value: 1500
@@ -264,6 +267,7 @@ ApplicationWindow {
                     text: "z size"
                 }
                 DoubleSpinBox {
+                    id: ySize
                     from: 10
                     to: 1000
                     value: 1500
@@ -273,6 +277,7 @@ ApplicationWindow {
                     text: "height"
                 }
                 DoubleSpinBox {
+                    id: height
                     from: 2
                     to: 500
                     value: 500
@@ -282,6 +287,7 @@ ApplicationWindow {
                     text: "milling stop"
                 }
                 DoubleSpinBox {
+                    id: safeArea
                     from: 2
                     to: 500
                     value: 200
@@ -291,11 +297,7 @@ ApplicationWindow {
                 Button {
                     text: "Apply"
                     onClicked: {
-                        //if(millingMaterial.modified) {
-                            materialResetConfirmationDialog.open()
-                        //} else {
-                            // apply material data
-                        //}
+                        millingMaterial.setSizes(xRes.value, yRes.value, xSize.realValue, ySize.realValue, height.realValue)
                     }
                 } // button
                 Button {
@@ -346,6 +348,15 @@ ApplicationWindow {
                 text: "Stop"
                 enabled: millingManager.running
                 onClicked: millingManager.Stop()
+            }
+            ToolButton {
+                text:"FF"
+                enabled: millingManager.running
+                onClicked: millingManager.RunToEnd()
+            }
+            Text {
+                text: "Progress: "+millingManager.progress.toFixed(2)
+                visible: millingManager.running
             }
             ToolSeparator{}
 

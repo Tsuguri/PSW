@@ -105,6 +105,11 @@ void Material::resetHeights() {
     sendVertices();
 
 }
+
+void Material::setSizes(int xRes, int yRes, float x, float y, float height) {
+    resize(x,y,height,xRes,yRes);
+}
+
 void Material::resize(float xSize, float ySize, float height, unsigned int xResolution, unsigned int yResolution){
     this->gridSize = vec3{xSize, ySize, height};
     this->xRes = xResolution;
@@ -260,21 +265,21 @@ void Material::resize(float xSize, float ySize, float height, unsigned int xReso
     emit modifiedChanged();
 }
 
-void Material::sendVertices() {
-    //if(modified)
-    //
-    //std::cout<<"empty: "<<tempArray.isEmpty() <<" "<<tempArray.isNull()<<" "<<tempArray.size()<<std::endl;
+void Material::sendVertices(bool wait) {
+    if(!modified) {
+        return;
+    }
     auto dat = reinterpret_cast<const char*>(buffer.data());
     auto size = static_cast<unsigned int>(buffer.size() * sizeof(vertex));
-    //std::cout<<"vertices size: "<<size<<std::endl;
     auto destination = tempArray.data();
-    QThreadPool::globalInstance()->waitForDone();
+    if(wait){
+        QThreadPool::globalInstance()->waitForDone();
+    }
     for(unsigned int i =0; i<size; i++){
-        //std::cout<<i<<std::endl;
         destination[i] = dat[i];
     }
-    //std::cout<<"heho"<<std::endl;
 
+    modified=false;
     vbo->setData(tempArray);
 }
 
@@ -288,11 +293,11 @@ vec3 Material::trans(vec3 pos) {
 
 void Material::setHeight(int x, int y, float height){
 
-    // dodać frezowanie krawędzi
     auto h =buffer[y*(xRes+1)+x].position.z;
     h = std::min(h, height);
     //std::cout<<"h: "<<h<<std::endl;
     buffer[y*(xRes+1)+x].position.z = h;
+    modified = true;
 
     if(x==0){
         minusXup[y].position.z = h;
@@ -337,6 +342,7 @@ void Material::updateNormal(int x, int y) {
     auto posX = x<xRes;
     auto negY = y>0;
     auto posY = y<yRes;
+    modified=true;
 
     auto pos = buffer[y*(xRes+1)+x].position;
 
@@ -437,7 +443,7 @@ void Material::mill(Mill* tool, vec3 from, vec3 to, bool updateBuffer) {
 
     auto vect = to-from;
     auto dist = vect.len();
-    auto len = tool->getRadius()/10;
+    auto len = tool->getRadius()/20.0;
     auto steps = dist/len;
     for(unsigned int i=0;i<steps; i++) {
         auto pos = Interpolate(from, to, i*len/dist);
