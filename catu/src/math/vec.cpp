@@ -7,9 +7,9 @@ vec3 Interpolate(vec3 from, vec3 to, float t) {
 
 vec3 Cross(vec3 l, vec3 r){
     vec3 ret;
-    ret.x = l.z * r.y - l.y*r.z;
-    ret.y = l.y * r.x - l.x*r.y;
-    ret.z = l.x * r.z - l.z*r.x;
+    ret.x = l.y * r.z - l.z*r.y;
+    ret.y = l.z * r.x - l.x*r.z;
+    ret.z = l.x * r.y - l.y*r.x;
     return ret;
 }
 

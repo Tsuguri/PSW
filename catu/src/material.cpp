@@ -3,6 +3,8 @@
 
 #include <Qt3DRender/QGeometryRenderer>
 #include <Qt3DExtras/QDiffuseMapMaterial>
+#include <QRunnable>
+#include <QThreadPool>
 
 #include <QTextureImage>
 
@@ -266,6 +268,7 @@ void Material::sendVertices() {
     auto size = static_cast<unsigned int>(buffer.size() * sizeof(vertex));
     //std::cout<<"vertices size: "<<size<<std::endl;
     auto destination = tempArray.data();
+    QThreadPool::globalInstance()->waitForDone();
     for(unsigned int i =0; i<size; i++){
         //std::cout<<i<<std::endl;
         destination[i] = dat[i];
@@ -311,7 +314,24 @@ void Material::setHeight(int x, int y, float height){
     }
 }
 
+class NormalCounter : public QRunnable{
+    void run() override {
+        mat->updateNormal(x,y);
+
+    }
+    public:
+    NormalCounter(int x, int y, Material* mat) : x(x), y(y), mat(mat) {}
+
+    private:
+    int x;
+    int y;
+    Material* mat;
+};
+
 void Material::updateNormal(int x, int y) {
+            if(x<0 || y<0 || x>xRes+1 || y>yRes+1) {
+                return;
+            }
     vec3 normal{};
     auto negX = x>0;
     auto posX = x<xRes;
@@ -362,13 +382,9 @@ void Material::updateNormals(float xFrom, float xTo, float yFrom, float yTo){
     int ty = materialSpaceTo.y/dy;
     
 
-    for(int x = fx; x<=tx; x++) {
-        for(int y = fy; y<=ty; y++) {
-            if(x<0 || y<0 || x>xRes+1 || y>yRes+1) {
-                //std::cout<<"discarded "<<x<<" "<<y<<std::endl;
-                continue;
-            }
-            updateNormal(x,y);
+    for(int x = fx-2; x<=tx+2; x++) {
+        for(int y = fy-2; y<=ty+2; y++) {
+            QThreadPool::globalInstance()->start(new NormalCounter(x,y, this));
         }
     }
 }

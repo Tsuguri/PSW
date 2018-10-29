@@ -36,6 +36,7 @@ class Material : public Qt3DCore::QEntity {
         void mill(Mill* tool, vec3 from, vec3 to, bool updateBuffer = true);
         void updateNormals();
         void updateNormals(float xFrom, float xTo, float yFrom, float yTo);
+        void updateNormal(int x, int y);
         void sendVertices();
 
         Q_INVOKABLE void resetHeights();
@@ -45,7 +46,6 @@ class Material : public Qt3DCore::QEntity {
         void millPlace(vec3 pos, float radius, const std::function<float(float, float)>& lamb);
         vec3 trans(vec3);
         void resize(float xSize, float ySize, float height, unsigned int xResolution, unsigned int yResolution);
-        void updateNormal(int x, int y);
         void setHeight(int x, int y, float newHeight);
 
         bool modified;

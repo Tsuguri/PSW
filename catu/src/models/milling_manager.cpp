@@ -58,6 +58,8 @@ void MillingManager::Stop() {
     _active = false;
     _running = false;
     _timer->stop();
+    _material->updateNormals();
+    _material->sendVertices();
     emit activeChanged();
     emit runningChanged();
 }
@@ -124,12 +126,21 @@ void MillingManager::timerTick(){
     auto from = _currentPos;
 
     float radius = 0;
+
+    float x1 = _currentPos.x;
+    float x2 = _currentPos.x;
+    float y1 = _currentPos.y;
+    float y2 = _currentPos.y;
     while(timeToRun > 0) {
         auto canMove = timeToRun * _speed * 10;
         auto mill = d.paths->path(d.currentPath)->getTool();
         radius = std::max(radius, (float)mill->getRadius());
         auto comm = d.paths->path(d.currentPath)->getCommand(d.currentCommand);
         auto to = comm->MoveFrom(_currentPos);
+        x1 = std::min(x1, to.x);
+        x2 = std::max(x2, to.x);
+        y1 = std::min(y1, to.y);
+        y2 = std::max(y2, to.y);
         auto movement = vec3(to.x-_currentPos.x, to.y-_currentPos.y, to.z-_currentPos.z);
         auto len = movement.len();
         if(len > canMove) {
@@ -156,7 +167,7 @@ void MillingManager::timerTick(){
 
         }
     }
-    _material->updateNormals(from.x - radius/2.0,_currentPos.x+radius/2.0, from.y-radius/2.0, _currentPos.y+radius/2.0);
+    _material->updateNormals(x1 - radius/2.0,x2+radius/2.0, y1-radius/2.0, y2+radius/2.0);
     _material->sendVertices();
     emit toolPosChanged();
 
