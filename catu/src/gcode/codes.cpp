@@ -4,6 +4,7 @@
 #include <iostream>
 #include <fstream>
 #include <cmath>
+#include <algorithm>
 
 namespace GCode{
 
@@ -53,9 +54,10 @@ namespace GCode{
         return std::unique_ptr<Command>(new G01Command(x,y,z));
     }
 
-    std::unique_ptr<Command> ParseLine(const std::string& line){
+    std::unique_ptr<Command> ParseLine(std::string line){
         size_t i = 0;
         std::map<char, float> values;
+        std::replace(line.begin(), line.end(), '.',',');
 
         while(i<line.size()){
             size_t parsed = 0;
@@ -73,7 +75,8 @@ namespace GCode{
                 case 'X':
                 case 'Y':
                 case 'Z':
-                    auto value = std::stof(line.substr(i+1, line.size() - i), &parsed);
+                    float value = std::stof(line.substr(i+1, line.size() - i), &parsed);
+                    std::cout<<value<<std::endl;
                     values[line.at(i)] = value;
             }
             i += 1;//char

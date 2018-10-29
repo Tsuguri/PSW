@@ -31,7 +31,7 @@ class MillingManager : public QObject {
     Q_PROPERTY(Material* material WRITE setMaterial);
 
     public:
-    constexpr static int updateInterval = 10;
+    constexpr static int updateInterval = 50;
 
     explicit MillingManager(QObject* parent = nullptr);
 

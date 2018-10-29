@@ -1,4 +1,6 @@
 #include <models/milling_manager.hpp>
+#include <cmath>
+#include <QThread>
 
 
 MillingManager::MillingManager(QObject* parent)
@@ -15,10 +17,8 @@ MillingManager::MillingManager(QObject* parent)
     _elapsed(new QElapsedTimer()) {
     _timer->setInterval(updateInterval);
     connect(_timer, &QTimer::timeout, this, &MillingManager::timerTick);
-    _timer->start();
 
     _elapsed = new QElapsedTimer();
-    _elapsed->start();
 
 }
 
@@ -39,6 +39,8 @@ void MillingManager::Run() {
         _currentData.currentPath=0;
         _currentData.paths=_paths;
         _currentData.lengthDoneInCurrent =0;
+        _timer->start();
+        _elapsed->start();
         emit progressChanged();
         emit runningChanged();
     }
@@ -47,12 +49,15 @@ void MillingManager::Run() {
 
 void MillingManager::Pause() {
     _active = false;
+    _material->updateNormals();
+    _material->sendVertices();
     emit activeChanged();
 }
 
 void MillingManager::Stop() {
     _active = false;
     _running = false;
+    _timer->stop();
     emit activeChanged();
     emit runningChanged();
 }
@@ -106,7 +111,6 @@ void MillingManager::PerformStep(vec3 from, vec3 to, Mill* tool, bool updateBuff
 
     _material->mill(tool, from, to, updateBuffer);
     _currentPos = to;
-    emit toolPosChanged();
 }
 void MillingManager::timerTick(){
     auto time = _elapsed->restart();
@@ -117,10 +121,13 @@ void MillingManager::timerTick(){
 
     float timeToRun = time/1000.0; // w sekundach
     auto& d = _currentData;
+    auto from = _currentPos;
 
+    float radius = 0;
     while(timeToRun > 0) {
         auto canMove = timeToRun * _speed * 10;
         auto mill = d.paths->path(d.currentPath)->getTool();
+        radius = std::max(radius, (float)mill->getRadius());
         auto comm = d.paths->path(d.currentPath)->getCommand(d.currentCommand);
         auto to = comm->MoveFrom(_currentPos);
         auto movement = vec3(to.x-_currentPos.x, to.y-_currentPos.y, to.z-_currentPos.z);
@@ -137,16 +144,20 @@ void MillingManager::timerTick(){
                 d.currentCommand=1;
                 d.currentPath++;
                 if(d.currentPath >= d.paths->pathsCount()) {
+                    _material->updateNormals();
                     _running = _active = false;
+                    _timer->stop();
                     emit runningChanged();
                     emit activeChanged();
-                    return;
+                    break;
                 }
                 _currentPos = d.paths->path(d.currentPath)->getCommand(0)->MoveFrom(vec3{});
-                emit toolPosChanged();
             }
 
         }
     }
+    _material->updateNormals(from.x - radius/2.0,_currentPos.x+radius/2.0, from.y-radius/2.0, _currentPos.y+radius/2.0);
+    _material->sendVertices();
+    emit toolPosChanged();
 
 }

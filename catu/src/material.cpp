@@ -6,7 +6,7 @@
 
 #include <QTextureImage>
 
-Material::Material(Qt3DCore::QEntity *parent) : Qt3DCore::QEntity(parent), modified(false) {
+Material::Material(Qt3DCore::QEntity *parent) : Qt3DCore::QEntity(parent), modified(false), tempArray() {
   auto geometry_renderer = new Qt3DRender::QGeometryRenderer(this);
   auto geometry = new Qt3DRender::QGeometry(geometry_renderer);
 
@@ -80,6 +80,28 @@ Material::Material(Qt3DCore::QEntity *parent) : Qt3DCore::QEntity(parent), modif
 
   //regenerate(xExtent, zExtent, height, xCells, zCells, 0);
   resize(150.0f, 150.0f, 50.0f, 1000, 1000);
+}
+
+void Material::resetHeights() {
+
+    auto xp = xRes+1;
+    auto yp = yRes+1;
+    for(unsigned int x=0;x<xp;x++) {
+        for(unsigned int y=0;y<yp;y++) {
+            buffer[y*xp+x].position.z = gridSize.z;
+        }
+        minusYup[x].position.z = gridSize.z;
+        plusYup[x].position.z = gridSize.z;
+
+    }
+    for(unsigned int y =0; y<yp; y++) {
+        minusXup[y].position.z = gridSize.z;
+        plusXup[y].position.z = gridSize.z;
+    }
+    updateNormals();
+
+    sendVertices();
+
 }
 void Material::resize(float xSize, float ySize, float height, unsigned int xResolution, unsigned int yResolution){
     this->gridSize = vec3{xSize, ySize, height};
@@ -222,7 +244,8 @@ void Material::resize(float xSize, float ySize, float height, unsigned int xReso
         plusXIndex[y*6 + 5] = plusXbottomInd + y;
     }
     ibo->setData(QByteArray(reinterpret_cast<const char*>(indexBuffer.data()), static_cast<int>(indexBuffer.size() * sizeof(unsigned int))));
-    vbo->setData(QByteArray(reinterpret_cast<const char*>(buffer.data()), static_cast<int>(buffer.size() * sizeof(vertex))));
+    tempArray = QByteArray(reinterpret_cast<const char*>(buffer.data()), static_cast<int>(buffer.size() * sizeof(vertex)));
+    vbo->setData(tempArray);
 
     auto indices = static_cast<unsigned int>(indexBuffer.size());
     vertices= static_cast<unsigned int>(buffer.size());
@@ -237,7 +260,19 @@ void Material::resize(float xSize, float ySize, float height, unsigned int xReso
 
 void Material::sendVertices() {
     //if(modified)
-    vbo->setData(QByteArray(reinterpret_cast<const char*>(buffer.data()), static_cast<int>(buffer.size() * sizeof(vertex))));
+    //
+    //std::cout<<"empty: "<<tempArray.isEmpty() <<" "<<tempArray.isNull()<<" "<<tempArray.size()<<std::endl;
+    auto dat = reinterpret_cast<const char*>(buffer.data());
+    auto size = static_cast<unsigned int>(buffer.size() * sizeof(vertex));
+    //std::cout<<"vertices size: "<<size<<std::endl;
+    auto destination = tempArray.data();
+    for(unsigned int i =0; i<size; i++){
+        //std::cout<<i<<std::endl;
+        destination[i] = dat[i];
+    }
+    //std::cout<<"heho"<<std::endl;
+
+    vbo->setData(tempArray);
 }
 
 vec3 Material::trans(vec3 pos) {
@@ -269,7 +304,7 @@ void Material::setHeight(int x, int y, float height){
         minusYup[x].position.z = h;
         minusYup[x].texCoord.v = h/gridSize.z;
     } else if (y== yRes){
-        std::cout<<"from "<<plusYup[x].position.z<<" to "<<h<<std::endl;
+        //std::cout<<"from "<<plusYup[x].position.z<<" to "<<h<<std::endl;
         plusYup[x].position.z = h;
         //plusYup[x].texCoord.v = h/gridSize.z;
     
@@ -315,6 +350,29 @@ void Material::updateNormals() {
 
 }
 
+void Material::updateNormals(float xFrom, float xTo, float yFrom, float yTo){
+
+    auto dx = gridSize.x / (xRes+1);
+    auto dy = gridSize.y / (yRes+1);
+    auto materialSpace = trans(vec3{xFrom, yFrom, 0});
+    auto materialSpaceTo = trans(vec3{xTo, yTo, 0});
+    int fx = materialSpace.x/dx;
+    int tx = materialSpaceTo.x/dx;
+    int fy = materialSpace.y/dy;
+    int ty = materialSpaceTo.y/dy;
+    
+
+    for(int x = fx; x<=tx; x++) {
+        for(int y = fy; y<=ty; y++) {
+            if(x<0 || y<0 || x>xRes+1 || y>yRes+1) {
+                //std::cout<<"discarded "<<x<<" "<<y<<std::endl;
+                continue;
+            }
+            updateNormal(x,y);
+        }
+    }
+}
+
 void Material::millPlace(vec3 pos, float radius, const std::function<float(float, float)>& heightLamb) {
     auto materialSpace = trans(pos);
     if(materialSpace.x + radius < 0 || materialSpace.x - radius > gridSize.x || materialSpace.y + radius <0 || materialSpace.y - radius > gridSize.y){
@@ -348,15 +406,7 @@ void Material::millPlace(vec3 pos, float radius, const std::function<float(float
         }
     }
     
-    for(int x = px - rdx; x<=px+rdx; x++) {
-        for(int y = py - rdy; y<=py+rdy; y++) {
-            if(x<0 || y<0 || x>xRes+1 || y>yRes+1) {
-                //std::cout<<"discarded "<<x<<" "<<y<<std::endl;
-                continue;
-            }
-            updateNormal(x,y);
-        }
-    }
+
 
 }
 
@@ -371,7 +421,7 @@ void Material::mill(Mill* tool, vec3 from, vec3 to, bool updateBuffer) {
 
     auto vect = to-from;
     auto dist = vect.len();
-    auto len = tool->getRadius()/6;
+    auto len = tool->getRadius()/10;
     auto steps = dist/len;
     for(unsigned int i=0;i<steps; i++) {
         auto pos = Interpolate(from, to, i*len/dist);
@@ -383,7 +433,6 @@ void Material::mill(Mill* tool, vec3 from, vec3 to, bool updateBuffer) {
 
     //std::cout<<"tool "<<tool->getRadius()<<" "<<tool->getType().toStdString()<<" to: "<<to.x<<" "<<to.y<<" "<<to.z<<std::endl;
     //updateNormals();
-    sendVertices();
 }
 
 bool Material::isModified() const {

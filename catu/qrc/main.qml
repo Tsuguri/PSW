@@ -298,6 +298,12 @@ ApplicationWindow {
                         //}
                     }
                 } // button
+                Button {
+                    text: "Reset milled area"
+                    onClicked: {
+                        millingMaterial.resetHeights()
+                    }
+                }
             } // grid
         } //rectangle
     } // material popup

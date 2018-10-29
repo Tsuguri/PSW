@@ -34,6 +34,11 @@ class Material : public Qt3DCore::QEntity {
         bool isModified() const;
 
         void mill(Mill* tool, vec3 from, vec3 to, bool updateBuffer = true);
+        void updateNormals();
+        void updateNormals(float xFrom, float xTo, float yFrom, float yTo);
+        void sendVertices();
+
+        Q_INVOKABLE void resetHeights();
 
     private:
 
@@ -41,12 +46,11 @@ class Material : public Qt3DCore::QEntity {
         vec3 trans(vec3);
         void resize(float xSize, float ySize, float height, unsigned int xResolution, unsigned int yResolution);
         void updateNormal(int x, int y);
-        void updateNormals();
         void setHeight(int x, int y, float newHeight);
-        void sendVertices();
 
         bool modified;
         std::vector<vertex> buffer;
+        QByteArray tempArray;
         vertex* minusXbottom;
         vertex* minusYbottom;
         vertex* plusXbottom;
