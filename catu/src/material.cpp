@@ -451,7 +451,7 @@ bool Material::mill(Mill* tool, vec3 from, vec3 to, const std::vector<std::tuple
 
     auto vect = to-from;
     auto dist = vect.len();
-    auto len = tool->getRadius()/20.0;
+    auto len = tool->getRadius()/100.0;
     auto steps = dist/len;
     //std::cout<<"interesto"<<std::endl;
     for(unsigned int i=0;i<steps; i++) {
