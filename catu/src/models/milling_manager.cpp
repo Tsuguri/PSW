@@ -24,6 +24,36 @@ MillingManager::MillingManager(QObject* parent)
 
 }
 
+void MillingManager::SetPoints(Mill* tool){
+    _currentData.pointsToMil.clear();
+    auto gridSize = _material->getSize();
+    auto xRes= _material->getXRes();
+    auto yRes = _material->getYRes();
+
+    auto radius = std::ceil(tool->getRadius()/2.0);
+    auto dx = gridSize.x / (xRes+1);
+    auto dy = gridSize.y / (yRes+1);
+    int rdx = radius/dx; // number of grains in radius along x axis;
+    int rdy = radius/dy; // number of grains in radius along y axis;
+
+    std::function<float(float, float)> lamb;
+    if (tool->type() == MillType::Flat){
+        lamb = [radius](float distance, float h) { return h;};
+    } else {
+        lamb = [radius](float distance, float h) {return h+radius-std::sqrt(radius*radius - distance*distance);};
+    }
+    auto dist = [dx,dy](int a, int b) { return a*a*dx*dx + b*b*dy*dy;};
+    auto r2 = radius*radius;
+    for(auto x =-rdx; x<=rdx; x++) {
+        for( auto y=-rdy; y<rdy; y++) {
+            auto dst = dist(x,y);
+            if(dst<r2) {
+                _currentData.pointsToMil.push_back(std::make_tuple(x,y,lamb(std::sqrt(dst),0)));
+            }
+        }
+    }
+
+}
 
 void MillingManager::Run() {
     if(!_active && _running) {
@@ -43,6 +73,8 @@ void MillingManager::Run() {
         _currentData.currentPath=0;
         _currentData.paths=_paths;
         _currentData.lengthDoneInCurrent =0;
+        _currentData.pointsToMil={};
+        SetPoints( _paths->path(0)->getTool());
 
         _totalLength=0;
         for(int i=0; i<_paths->pathsCount(); i++) {
@@ -109,6 +141,7 @@ void MillingManager::Finish() {
                 emit activeChanged();
                 break;
             }
+            SetPoints(d.paths->path(d.currentPath)->getTool());
             _currentPos = d.paths->path(d.currentPath)->getCommand(0)->MoveFrom(vec3{});
         }
     }
@@ -170,8 +203,9 @@ void MillingManager::setProgress(float progress) {
 
 void MillingManager::PerformStep(vec3 from, vec3 to, Mill* tool, bool updateBuffer ){
 
-    if( _material->mill(tool, from, to, updateBuffer) && (to.z < from.z-0.0001)&& tool->type()==MillType::Flat) {
+    if( _material->mill(tool, from, to,_currentData.pointsToMil, updateBuffer) && (to.z < from.z-0.01)&& (tool->type()==MillType::Flat)) {
         if(!_downsideFlatMod){
+            std::cout<<"from "<<from.x<<" "<<from.y<<" "<<from.z<<" to "<<to.x<<" "<<to.y<<" "<<to.z<<" with "<<(tool->type()==MillType::Flat)<<" "<<tool->getRadius()<<std::endl;
             _downsideFlatMod=true;
             emit downsideMill();
         }
@@ -227,6 +261,7 @@ void MillingManager::timerTick(){
                     emit activeChanged();
                     break;
                 }
+                SetPoints(d.paths->path(d.currentPath)->getTool());
                 _currentPos = d.paths->path(d.currentPath)->getCommand(0)->MoveFrom(vec3{});
             }
 

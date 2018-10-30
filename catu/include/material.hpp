@@ -33,18 +33,22 @@ class Material : public Qt3DCore::QEntity {
 
         bool isModified() const;
 
-        bool mill(Mill* tool, vec3 from, vec3 to, bool updateBuffer = true);
+        bool mill(Mill* tool, vec3 from, vec3 to, const std::vector<std::tuple<int, int, float>>& pts, bool updateBuffer = true);
         void updateNormals();
         void updateNormals(float xFrom, float xTo, float yFrom, float yTo);
         void updateNormal(int x, int y);
         void sendVertices(bool wait=true);
+
+        vec3 getSize() const;
+        int getXRes() const;
+        int getYRes() const;
 
         Q_INVOKABLE void resetHeights();
         Q_INVOKABLE void setSizes(int xRes, int yRes, float x, float y, float h);
 
     private:
 
-        void millPlace(vec3 pos, float radius, const std::function<float(float, float)>& lamb);
+        void millPlace(vec3 pos, float radius, const std::vector<std::tuple<int, int, float>>& pts);
         vec3 trans(vec3);
         void resize(float xSize, float ySize, float height, unsigned int xResolution, unsigned int yResolution);
         void setHeight(int x, int y, float newHeight);

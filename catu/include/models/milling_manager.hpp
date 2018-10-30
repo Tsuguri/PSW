@@ -14,6 +14,7 @@ struct WorkData {
     size_t currentPath;
     size_t currentCommand;
     float lengthDoneInCurrent;
+    std::vector<std::tuple<int,int, float>> pointsToMil;
 };
 
 class MillingManager : public QObject {
@@ -66,6 +67,7 @@ signals:
     private:
     void setProgress(float progress);
     void PerformStep(vec3 from, vec3 to, Mill* tool, bool updateBuffer = true);
+    void SetPoints(Mill* tool);
 
     void timerTick();
     bool _running;

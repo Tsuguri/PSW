@@ -46,7 +46,7 @@ namespace GCode{
             x = values.at('X');
         }
         if(values.count('Y')){
-            y = values.at('Y');
+            y = -values.at('Y');
         }
         if(values.count('Z')){
             z = values.at('Z');
