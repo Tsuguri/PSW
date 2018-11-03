@@ -12,3 +12,4 @@ add_definitions(-D_USE_MATH_DEFINES)
 
 add_subdirectory(haru)
 add_subdirectory(catu)
+add_subdirectory(nigari)

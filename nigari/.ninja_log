@@ -1,0 +1,26 @@
+# ninja log v5
+0	16	0	haru/qrc_main.cpp	f7de2a37a5bea491
+0	24	0	catu/qrc_main.cpp	5a5d33ce3355e916
+16	106	1541245448	haru/CMakeFiles/haru_autogen	d197bd0ab4a9ebd2
+16	106	1541245448	haru/haru_autogen/mocs_compilation.cpp	d197bd0ab4a9ebd2
+106	164	0	haru/CMakeFiles/haru.dir/qrc_main.cpp.o	58b1dacb2d32af7c
+24	211	1541245448	catu/CMakeFiles/catu_autogen	4f19df3143e5195a
+24	211	1541245448	catu/catu_autogen/mocs_compilation.cpp	4f19df3143e5195a
+212	668	0	catu/CMakeFiles/catu.dir/src/math/vec.cpp.o	e800ae302dda84a3
+211	1914	0	catu/CMakeFiles/catu.dir/src/gcode/codes.cpp.o	76ed3195e2633a25
+106	2106	0	haru/CMakeFiles/haru.dir/src/math.cpp.o	e2176ca9d294df4e
+212	2135	0	catu/CMakeFiles/catu.dir/src/milling/path.cpp.o	b351e7a067475e25
+106	2194	0	haru/CMakeFiles/haru.dir/src/simulation.cpp.o	bff2c516bb946dde
+106	2232	0	haru/CMakeFiles/haru.dir/haru_autogen/mocs_compilation.cpp.o	69ef08a3dbc8905c
+2194	2439	0	catu/CMakeFiles/catu.dir/qrc_main.cpp.o	df36f962d5f904e3
+106	2522	0	haru/CMakeFiles/haru.dir/src/main.cpp.o	1073fec149a079d5
+212	3019	0	catu/CMakeFiles/catu.dir/src/main.cpp.o	b669219eb57ceb53
+212	3257	0	catu/CMakeFiles/catu.dir/src/models/milling_manager.cpp.o	a5416ceabc6f14bf
+669	3296	0	catu/CMakeFiles/catu.dir/src/models/path_render.cpp.o	cef32fe541bbc391
+2522	3334	0	haru/haru	28c1e8638931d8e7
+2136	3466	0	catu/CMakeFiles/catu.dir/src/tools/mill.cpp.o	ef1a329b3ca9a4d4
+1915	3949	0	catu/CMakeFiles/catu.dir/src/models/path_manager.cpp.o	80fd5c326427cf45
+212	3968	0	catu/CMakeFiles/catu.dir/src/material.cpp.o	ba0866364f5999d6
+2106	4003	0	catu/CMakeFiles/catu.dir/src/models/tool_manager.cpp.o	cb0829c7e7a07a5d
+2232	4181	0	catu/CMakeFiles/catu.dir/catu_autogen/mocs_compilation.cpp.o	407380046cd83a73
+4181	4721	0	catu/catu	4d74e81518294403
