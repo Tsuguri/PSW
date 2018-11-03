@@ -15,7 +15,7 @@ import Nigari 1.0
 
 
 ApplicationWindow {
-    //id: appWindow
+    id: appWindow
     visible: true
     title: "Nigari"
 
@@ -28,6 +28,11 @@ ApplicationWindow {
     Simulation {
         id:simulation
     }
+
+    property bool diagonalEnabled: true
+    property bool cubeEnabled: true
+    property bool pathEnabled: true
+
 
     Rectangle {
         id: leftMenu
@@ -145,11 +150,13 @@ ApplicationWindow {
 
                 Entity {
                     id: cube
+                    enalbed: cubeEnabled
                     components: [cubeMat, cubeMesh, cubeTransform]
                 }
 
                 Entity {
                     id: diagonal
+                    enabled: diagonalEnabled
                     components: [baseMat, diagonalMesh, diagonalTransform]
                 }
 
