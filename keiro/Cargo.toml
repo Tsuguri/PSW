@@ -1,0 +1,6 @@
+[package]
+name = "keiro"
+version = "0.1.0"
+authors = ["Adam Winiarczuk <awiniarczuk@veritystudios.com>"]
+
+[dependencies]
