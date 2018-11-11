@@ -4,3 +4,9 @@ version = "0.1.0"
 authors = ["Adam Winiarczuk <awiniarczuk@veritystudios.com>"]
 
 [dependencies]
+glium="0.16"
+image="*"
+cgmath="*"
+serde-xml-rs="*"
+serde="*"
+serde_derive="*"
