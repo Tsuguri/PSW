@@ -1,4 +1,5 @@
 extern crate glium;
+use Math::Vector::Vector3;
 
 #[derive(Copy, Clone)]
 pub struct Vertex
@@ -9,15 +10,30 @@ pub struct Vertex
 }
 implement_vertex!(Vertex,position, normal, tex);
 
-pub struct Model
+
+#[derive(Copy, Clone)]
+pub struct PositionVertex
 {
-	vertices: glium::VertexBuffer<Vertex>,
+    pub position: [f32; 3],
+}
+implement_vertex!(PositionVertex, position);
+
+impl PositionVertex
+{
+    pub fn new(vec: Vector3<f32>) -> PositionVertex
+    {
+        PositionVertex { position : [vec.x(), vec.y(), vec.z()]}
+    }
+}
+pub struct Model<T> where T: glium::vertex::Vertex
+{
+	vertices: glium::VertexBuffer<T>,
 	indices: glium::index::IndexBuffer<u32>
 }
 
-impl Model
+impl<T> Model<T> where T: glium::vertex::Vertex
 {
-    pub fn GetVertices<'a>(&'a self) -> &'a glium::VertexBuffer<Vertex>
+    pub fn GetVertices<'a>(&'a self) -> &'a glium::VertexBuffer<T>
     {
         &self.vertices
     }
@@ -27,7 +43,7 @@ impl Model
         &self.indices
     }
 
-    pub fn new(vertices: glium::VertexBuffer<Vertex>, indices: glium::index::IndexBuffer<u32>) -> Model
+    pub fn new(vertices: glium::VertexBuffer<T>, indices: glium::index::IndexBuffer<u32>) -> Model<T>
     {
         Model { vertices: vertices, indices: indices}
     }

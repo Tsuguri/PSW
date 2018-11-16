@@ -6,15 +6,10 @@ extern crate glium;
 extern crate image;
 extern crate cgmath;
 extern crate rand;
-#[macro_use]
-extern crate serde_derive;
-extern crate serde;
-extern crate serde_xml_rs;
 
 mod Input;
 mod Renderer;
 mod Math;
-mod Data;
 
 use std::time::Instant;
 
@@ -23,7 +18,6 @@ use Input::MouseInput::*;
 use Renderer::DataTypes::*;
 use Renderer::Camera::*;
 use Math::Vector::Vector3;
-use Data::deser;
 
 fn LoadTexture(display: &glium::backend::Facade, fileName: &String) -> glium::texture::Texture2d
 {
@@ -46,6 +40,52 @@ fn LoadFileContent(filename: &String) -> String
     contents
 }
 
+fn RandomBezierPatch(min : [f32; 2], max : [f32; 2], display : &glium::backend::Facade) -> Box<BezierPatch>
+{
+	let p00 = Vector3::new(min[0], 0.0, min[1]);
+	let p01 = Vector3::new(min[0], 0.0, min[1] + (max[1] - min[1]) / 3.0);
+	let p02 = Vector3::new(min[0], 0.0, min[1] + 2.0 * (max[1] - min[1]) / 3.0);
+	let p03 = Vector3::new(min[0], 0.0, max[1]);
+	let p10 = Vector3::new(min[0] + (max[0] - min[0]) / 3.0, 0.0, min[1]);
+	let p11 = Vector3::new(min[0] + (max[0] - min[0]) / 3.0, rand::random::<f32>() * 2.0 - 1.0, min[1] + (max[1] - min[1]) / 3.0);
+	let p12 = Vector3::new(min[0] + (max[0] - min[0]) / 3.0, rand::random::<f32>() * 2.0 - 1.0, min[1] + 2.0 * (max[1] - min[1]) / 3.0);
+	let p13 = Vector3::new(min[0] + (max[0] - min[0]) / 3.0, 0.0, max[1]);
+	let p20 = Vector3::new(min[0] + 2.0 * (max[0] - min[0]) / 3.0, 0.0, min[1]);
+	let p21 = Vector3::new(min[0] + 2.0 * (max[0] - min[0]) / 3.0, rand::random::<f32>() * 2.0 - 1.0, min[1] + (max[1] - min[1]) / 3.0);
+	let p22 = Vector3::new(min[0] + 2.0 * (max[0] - min[0]) / 3.0, rand::random::<f32>() * 2.0 - 1.0, min[1] + 2.0 * (max[1] - min[1]) / 3.0);
+	let p23 = Vector3::new(min[0] + 2.0 * (max[0] - min[0]) / 3.0, 0.0, max[1]);
+	let p30 = Vector3::new(max[0], 0.0, min[1]);
+	let p31 = Vector3::new(max[0], 0.0, min[1] + (max[1] - min[1]) / 3.0);
+	let p32 = Vector3::new(max[0], 0.0, min[1] + 2.0 * (max[1] - min[1]) / 3.0);
+	let p33 = Vector3::new(max[0], 0.0, max[1]);
+
+
+let shape = vec![
+		PositionVertex::new(p00),
+		PositionVertex::new(p01),
+		PositionVertex::new(p02),
+		PositionVertex::new(p03),
+		PositionVertex::new(p10),
+		PositionVertex::new(p11),
+		PositionVertex::new(p12),
+		PositionVertex::new(p13),
+		PositionVertex::new(p20),
+		PositionVertex::new(p21),
+		PositionVertex::new(p22),
+		PositionVertex::new(p23),
+		PositionVertex::new(p30),
+		PositionVertex::new(p31),
+		PositionVertex::new(p32),
+		PositionVertex::new(p33),
+	];
+	let verts = glium::VertexBuffer::new(display, &shape).unwrap();
+	let verts2 = glium::VertexBuffer::new(display, &shape).unwrap();
+	let indic = vec![0u32, 1, 2, 3, 7, 6, 5, 4, 8, 9, 10, 11, 15, 14,  13, 12, 8, 4, 0, 1, 5, 9, 13, 14, 10, 6, 2, 3, 7, 11, 15];
+	let indic2 = vec![0u32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15];
+	let indices = glium::index::IndexBuffer::new(display, glium::index::PrimitiveType::LineStrip, &indic).unwrap();
+	let surfIndic = glium::index::IndexBuffer::new(display, glium::index::PrimitiveType::Patches{ vertices_per_patch : 16}, &indic2).unwrap();
+	Box::new(BezierPatch {mesh : Model::new(verts, indices), surface : Model::new(verts2, surfIndic), x : 0, y : 0})
+}
 
 fn RandomBspline(min : [f32; 2], max : [f32;2], div : usize, display: &glium::backend::Facade) -> Vec<Box<BezierPatch>>
 {
@@ -113,7 +153,7 @@ struct BezierPatch
 fn main()
 {
 	use glium::{DisplayBuild, Surface};
-	let display = glium::glutin::WindowBuilder::new().with_title("Super Paths").build_glium().unwrap();
+	let display = glium::glutin::WindowBuilder::new().with_title("Super Tessellation").build_glium().unwrap();
 
 	let diffuseTexture = LoadTexture(&display, &String::from("res/diffuse.jpg"));
 	let normalTexture = LoadTexture(&display, &String::from("res/normals.jpg"));
@@ -128,8 +168,27 @@ fn main()
 	let triangleTessEval = LoadFileContent(&String::from("res/Shaders/triangleTessEval.tese"));
 	let bsplineTessEval = LoadFileContent(&String::from("res/Shaders/bsplineTessEval.tese"));
 
-    let sceneData = deser("res/model.xml");
-
+	let bezier = RandomBezierPatch([0.0, 0.0], [2.0, 2.0], &display);
+	let bezier2 = RandomBezierPatch([0.0, 0.0], [2.0, 2.0], &display);
+	let multipleBeziers = vec![
+		RandomBezierPatch([-4.0, -4.0], [-2.0, -2.0], &display),
+		RandomBezierPatch([-2.0, -4.0], [0.0, -2.0], &display),
+		RandomBezierPatch([0.0, -4.0], [2.0, -2.0], &display),
+		RandomBezierPatch([2.0, -4.0], [4.0, -2.0], &display),
+		RandomBezierPatch([-4.0, -2.0], [-2.0, 0.0], &display),
+		RandomBezierPatch([-2.0, -2.0], [0.0, 0.0], &display),
+		RandomBezierPatch([0.0, -2.0], [2.0, 0.0], &display),
+		RandomBezierPatch([2.0, -2.0], [4.0, 0.0], &display),
+		RandomBezierPatch([-4.0, 0.0], [-2.0, 2.0], &display),
+		RandomBezierPatch([-2.0, 0.0], [0.0, 2.0], &display),
+		RandomBezierPatch([0.0, 0.0], [2.0, 2.0], &display),
+		RandomBezierPatch([2.0, 0.0], [4.0, 2.0], &display),
+		RandomBezierPatch([-4.0, 2.0], [-2.0, 4.0], &display),
+		RandomBezierPatch([-2.0, 2.0], [0.0, 4.0], &display),
+		RandomBezierPatch([0.0, 2.0], [2.0, 4.0], &display),
+		RandomBezierPatch([2.0, 2.0], [4.0, 4.0], &display)
+		
+	];
 	let bspline = RandomBspline([-4.0, -4.0], [4.0, 4.0], 8, &display);
 
 	let mut camera = Camera::new(-45.0, 30.0, Vector3::new(0.0, 0.0, 0.0), 3.0,  3.14/5.0, 0.1, 100.0, 3.0/4.0);
@@ -194,6 +253,23 @@ fn main()
 			camera.ModifyYAngle(-mouseDT[0] / 3.0);
 			
 		}
+
+		if keyboard.ButtonPressedInLastFrame(KeyCode::P)
+		{
+			innerDiv+=1.0;
+		}
+		if keyboard.ButtonPressedInLastFrame(KeyCode::O)
+		{
+			innerDiv-=1.0;
+		}
+		if keyboard.ButtonPressedInLastFrame(KeyCode::L)
+		{
+			outerDiv+=1.0;
+		}
+		if keyboard.ButtonPressedInLastFrame(KeyCode::K)
+		{
+			outerDiv-=1.0;
+		}
 		if keyboard.ButtonPressedInLastFrame(KeyCode::N)
 		{
 			mode +=1;
@@ -233,7 +309,34 @@ fn main()
 					perspective : perspectiveMat.Content()};
 		match mode
 		{
-			0=>
+			0 => 
+			{
+				if drawPolygon
+				{
+					target.draw(bezier.mesh.GetVertices(), bezier.mesh.GetIndices(), &outlineProgram, &uniform!{t: t, mat: mat.Content()}, &outlineParams).unwrap();
+				}
+				target.draw(bezier.surface.GetVertices(),bezier.surface.GetIndices(), &shaderProgram, &uniforms, &surfaceParams).unwrap();
+			},
+			1 =>
+			{
+				if drawPolygon
+				{
+					target.draw(bezier2.mesh.GetVertices(), bezier2.mesh.GetIndices(), &outlineProgram, &uniform!{t: t, mat: mat.Content()}, &outlineParams).unwrap();
+				}
+				target.draw(bezier2.surface.GetVertices(),bezier2.surface.GetIndices(), &shaderProgram, &uniforms, &surfaceParams).unwrap();
+			},
+			2 =>
+			{
+				for bez in &multipleBeziers
+				{
+				if drawPolygon
+				{
+					target.draw(bez.mesh.GetVertices(), bez.mesh.GetIndices(), &outlineProgram, &uniform!{t: t, mat: mat.Content()}, &outlineParams).unwrap();
+				}
+				target.draw(bez.surface.GetVertices(),bez.surface.GetIndices(), &shaderProgram, &uniforms, &surfaceParams).unwrap();
+				}
+			},
+			3=>
 			{
 				for bspl in &bspline
 				{

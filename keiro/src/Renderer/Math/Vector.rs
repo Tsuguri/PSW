@@ -1,7 +1,7 @@
 use std::ops::Mul;
 use std::ops::Add;
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone)]
 pub struct Vector4<T> where T: Copy + Add<Output = T> + Mul<Output = T>
 {
 	content: [T; 4],
@@ -45,23 +45,18 @@ impl<T> Add for Vector4<T> where T: Copy + Add<Output = T> + Mul<Output = T>
 
 
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone)]
 pub struct Vector3<T> where T: Copy + Add<Output = T> + Mul<Output = T>
 {
 	content: [T; 3],
 }
 
-impl<T> Vector3<T> where T: Copy + Add<Output = T> + Mul<Output = T> + Default
+impl<T> Vector3<T> where T: Copy + Add<Output = T> + Mul<Output = T>
 {
 	pub fn Sum(&self) -> T
 	{
 		self.content[0]+self.content[1]+self.content[2]
 	}
-
-    pub fn empty() -> Vector3<T> 
-    {
-        Vector3 {content: [Default::default(); 3]}
-    }
 	
 	pub fn new(x : T, y : T, z : T) -> Vector3<T>
 	{
@@ -94,7 +89,7 @@ impl<T> Vector3<T> where T: Copy + Add<Output = T> + Mul<Output = T> + Default
 	}
 }
 
-impl<T> Mul<Vector3<T>> for Vector3<T> where T: Copy + Add<Output = T> + Mul<Output = T> + Default
+impl<T> Mul<Vector3<T>> for Vector3<T> where T: Copy + Add<Output = T> + Mul<Output = T>
 {
 	type Output = Vector3<T>;
 	fn mul(self, rhs: Vector3<T>) -> Vector3<T>
@@ -103,7 +98,7 @@ impl<T> Mul<Vector3<T>> for Vector3<T> where T: Copy + Add<Output = T> + Mul<Out
 	}
 }
 
-impl<T> Mul<T> for Vector3<T> where T: Copy + Add<Output = T> + Mul<Output = T> + Default
+impl<T> Mul<T> for Vector3<T> where T: Copy + Add<Output = T> + Mul<Output = T>
 {
 	type Output = Vector3<T>;
 	fn mul(self, rhs: T) -> Vector3<T>
@@ -112,7 +107,7 @@ impl<T> Mul<T> for Vector3<T> where T: Copy + Add<Output = T> + Mul<Output = T> 
 	}
 }
 
-impl<T> Add for Vector3<T> where T: Copy + Add<Output = T> + Mul<Output = T> + Default
+impl<T> Add for Vector3<T> where T: Copy + Add<Output = T> + Mul<Output = T>
 {
 	type Output = Vector3<T>;
 	fn add(self, rhs: Vector3<T>) -> Vector3<T>
