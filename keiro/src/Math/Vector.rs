@@ -1,10 +1,17 @@
-use std::ops::Mul;
-use std::ops::Add;
+use std::ops::{Mul, Add, Index, IndexMut};
+
+use super::Matrix::Matrix4;
 
 #[derive(Copy, Clone, Debug)]
 pub struct Vector4<T> where T: Copy + Add<Output = T> + Mul<Output = T>
 {
 	content: [T; 4],
+}
+
+impl<T> Default for Vector4<T> where T: Copy + Add<Output=T> + Mul<Output=T> + Default {
+    fn default() -> Vector4<T> {
+        Vector4 { content: [Default::default();4]}
+    }
 }
 
 impl<T> Vector4<T> where T: Copy + Add<Output = T> + Mul<Output = T>
@@ -23,6 +30,34 @@ impl<T> Vector4<T> where T: Copy + Add<Output = T> + Mul<Output = T>
 	{
 		Vector4{content : tab}
 	}
+
+}
+
+impl<T> Index<usize> for Vector4<T> where T: Copy + Add<Output=T> + Mul<Output=T> {
+    type Output = T;
+
+    fn index<'a>(&self, index: usize) -> &T {
+        &self.content[index]
+    }
+}
+
+impl<T> IndexMut<usize> for Vector4<T> where T: Copy + Add<Output=T> + Mul<Output=T> {
+    fn index_mut<'a>(&mut self, index: usize) -> &mut T {
+        &mut self.content[index]
+    }
+}
+
+impl<T> Vector4<T> where T: Copy + Add<Output = T> + Mul<Output = T> + Default {
+    pub fn matrix_multiply(vec1: Vector4<T>, vec2: Vector4<T>) -> Matrix4<T> {
+        let mut mat = Matrix4::empty();
+
+        for i in 0..4 {
+            for j in 0..4 {
+                mat[(i,j)] = vec1[i] * vec2[j];
+            }
+        }
+        mat
+    }
 }
 
 impl<T> Mul for Vector4<T> where T: Copy + Add<Output = T> + Mul<Output = T>

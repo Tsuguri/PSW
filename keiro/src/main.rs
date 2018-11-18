@@ -46,60 +46,63 @@ fn LoadFileContent(filename: &String) -> String
     contents
 }
 
+fn SceneToBsplines(scene: &Data::Scene, display: &glium::backend::Facade) -> Vec<Box<BezierPatch>> {
+    let mut v = Vec::with_capacity(200);
 
-fn RandomBspline(min : [f32; 2], max : [f32;2], div : usize, display: &glium::backend::Facade) -> Vec<Box<BezierPatch>>
-{
-	let mut vec = Vec::with_capacity(div + 3);
-	for i in 0..div + 3
-	{
-		vec.push(Vec::with_capacity(div + 3));
-	}
+    for surf in &scene.surfaces {
+        for patch in &surf.patches {
+            v.push(PatchToBsplines(patch, display));
+        }
+    }
 
-	let xStep = (max[0] - min[0]) as f32 / (div + 2) as f32;
-	let yStep = (max[1] - min[1]) as f32 / (div + 2) as f32;
-
-	for i in 0..div + 3
-	{
-		for j in 0..div + 3
-		{
-			vec[i].push(Vector3::new(min[0] + i as f32 * xStep, rand::random::<f32>() * 2.0 - 1.0, min[1] + j as f32 * yStep));
-		}
-	}
-
-	let mut meshes = Vec::with_capacity(div*div);
-	for i in 0..div
-	{
-		for j in 0..div
-		{
-			let shape = vec![
-				PositionVertex::new(vec[i][j]),
-				PositionVertex::new(vec[i][j + 1]),
-				PositionVertex::new(vec[i][j + 2]),
-				PositionVertex::new(vec[i][j + 3]),
-				PositionVertex::new(vec[i + 1][j]),
-				PositionVertex::new(vec[i + 1][j + 1]),
-				PositionVertex::new(vec[i + 1][j + 2]),
-				PositionVertex::new(vec[i + 1][j + 3]),
-				PositionVertex::new(vec[i + 2][j]),
-				PositionVertex::new(vec[i + 2][j + 1]),
-				PositionVertex::new(vec[i + 2][j + 2]),
-				PositionVertex::new(vec[i + 2][j + 3]),
-				PositionVertex::new(vec[i + 3][j]),
-				PositionVertex::new(vec[i + 3][j + 1]),
-				PositionVertex::new(vec[i + 3][j + 2]),
-				PositionVertex::new(vec[i + 3][j + 3]),
-			];
-			let verts = glium::VertexBuffer::new(display, &shape).unwrap();
-			let verts2 = glium::VertexBuffer::new(display, &shape).unwrap();
-			let indic = vec![0u32, 1, 2, 3, 7, 6, 5, 4, 8, 9, 10, 11, 15, 14,  13, 12, 8, 4, 0, 1, 5, 9, 13, 14, 10, 6, 2, 3, 7, 11, 15];
-			let indic2 = vec![0u32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15];
-			let indices = glium::index::IndexBuffer::new(display, glium::index::PrimitiveType::LineStrip, &indic).unwrap();
-			let surfIndic = glium::index::IndexBuffer::new(display, glium::index::PrimitiveType::Patches{ vertices_per_patch : 16}, &indic2).unwrap();
-			meshes.push(Box::new(BezierPatch {mesh : Model::new(verts, indices), surface : Model::new(verts2, surfIndic), x : i as i32, y : j as i32}));
-		}
-	}
-	meshes
+    v
 }
+
+fn LineFromPoints<'a, I>(points: I, display: &glium::backend::Facade) -> Model<PositionVertex> 
+    where I: Iterator<Item=&'a Vector3<f32>>
+{
+    let mut verts = Vec::new();
+    for i in points {
+        //println!("{:?}", *i);
+        verts.push(PositionVertex::new(*i));
+    }
+    let indices: Vec<u32> = (0..verts.len() as u32).collect();
+
+    let v = glium::VertexBuffer::new(display, &verts).unwrap();
+    let i = glium::index::IndexBuffer::new(display, glium::index::PrimitiveType::LineStrip, &indices).unwrap();
+    Model::new(v,i)
+
+}
+
+fn PatchToBsplines(patch: &Data::Patch, display: &glium::backend::Facade) -> Box<BezierPatch> {
+
+    let shape = [
+        PositionVertex::new(patch.points[0][0]),
+        PositionVertex::new(patch.points[0][1]),
+        PositionVertex::new(patch.points[0][2]),
+        PositionVertex::new(patch.points[0][3]),
+        PositionVertex::new(patch.points[1][0]),
+        PositionVertex::new(patch.points[1][1]),
+        PositionVertex::new(patch.points[1][2]),
+        PositionVertex::new(patch.points[1][3]),
+        PositionVertex::new(patch.points[2][0]),
+        PositionVertex::new(patch.points[2][1]),
+        PositionVertex::new(patch.points[2][2]),
+        PositionVertex::new(patch.points[2][3]),
+        PositionVertex::new(patch.points[3][0]),
+        PositionVertex::new(patch.points[3][1]),
+        PositionVertex::new(patch.points[3][2]),
+        PositionVertex::new(patch.points[3][3]),
+    ];
+	let verts = glium::VertexBuffer::new(display, &shape).unwrap();
+	let verts2 = glium::VertexBuffer::new(display, &shape).unwrap();
+	let indic = vec![0u32, 1, 2, 3, 7, 6, 5, 4, 8, 9, 10, 11, 15, 14,  13, 12, 8, 4, 0, 1, 5, 9, 13, 14, 10, 6, 2, 3, 7, 11, 15];
+	let indic2 = vec![0u32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15];
+	let indices = glium::index::IndexBuffer::new(display, glium::index::PrimitiveType::LineStrip, &indic).unwrap();
+	let surfIndic = glium::index::IndexBuffer::new(display, glium::index::PrimitiveType::Patches{ vertices_per_patch : 16}, &indic2).unwrap();
+	Box::new(BezierPatch {mesh : Model::new(verts, indices), surface : Model::new(verts2, surfIndic), x : 0, y : 0})
+}
+
 
 struct BezierPatch
 {
@@ -109,9 +112,64 @@ struct BezierPatch
 	pub surface : Model<PositionVertex>
 }
 
+fn GetWingsLines(surf: &Data::Surface, display: &glium::backend::Facade) -> Vec<Model<PositionVertex>> {
+    let mut lines = Vec::new();
+    let u = surf.u as f32;
+    // prawa krawedz
+    let poss : Vec<Vector3<f32>> = (0..100).map(|x| surf.evaluate(u*(x as f32)/100.0, surf.v as f32 - 0.0001)).collect();
+    lines.push(LineFromPoints((&poss).into_iter(), display));
+
+    // uszczypniecie
+    // troche za długie, ale nie ma co się bawić
+    let poss : Vec<Vector3<f32>> = (65..75).map(|x| surf.evaluate(u*(x as f32)/100.0, u)).collect();
+    lines.push(LineFromPoints((&poss).into_iter(), display));
+
+    // lewa krawedz
+    let poss : Vec<Vector3<f32>> = (0..100).map(|x| surf.evaluate(u*(x as f32)/100.0, 0.0)).collect();
+    lines.push(LineFromPoints((&poss).into_iter(), display));
+
+
+    lines
+}
+
+fn GetGatlingLines(surf: &Data::Surface, display: &glium::backend::Facade)->Vec<Model<PositionVertex>> {
+
+    let mut lines = Vec::new();
+    let u = surf.u as f32;
+
+    // prawa krawedz
+    let poss : Vec<Vector3<f32>> = (0..5).map(|x| surf.evaluate(u*(x as f32)/5.0, 0.5)).collect();
+    lines.push(LineFromPoints((&poss).into_iter(), display));
+
+    lines
+}
+
+fn GetCockpitLines(surf: &Data::Surface, display: &glium::backend::Facade)->Vec<Model<PositionVertex>> {
+    let mut lines = Vec::new();
+    let v = surf.v as f32;
+
+    // prawa krawedz
+    let poss : Vec<Vector3<f32>> = (70..100).map(|x| surf.evaluate(0.0, v*(x as f32)/100.0)).collect();
+    lines.push(LineFromPoints((&poss).into_iter(), display));
+
+    lines
+}
+
+fn GetBodyLines(surf: &Data::Surface, display: &glium::backend::Facade)->Vec<Model<PositionVertex>> {
+    let mut lines = Vec::new();
+    let u = surf.u as f32;
+
+    // prawa krawedz
+    let poss : Vec<Vector3<f32>> = (0..100).map(|x| surf.evaluate(u*(x as f32)/100.0, 3.0)).collect();
+    lines.push(LineFromPoints((&poss).into_iter(), display));
+
+    lines
+}
 
 fn main()
 {
+    let mut lines = Vec::<Model<PositionVertex>>::new();
+
 	use glium::{DisplayBuild, Surface};
 	let display = glium::glutin::WindowBuilder::new().with_title("Super Paths").build_glium().unwrap();
 
@@ -130,7 +188,28 @@ fn main()
 
     let sceneData = deser("res/model.xml");
 
-	let bspline = RandomBspline([-4.0, -4.0], [4.0, 4.0], 8, &display);
+    let bspline = SceneToBsplines(&sceneData, &display);
+
+    // 0 - gatling
+    // 1 - kadlub
+    // 2 - kokpit
+    // 3 - skrzydla
+
+
+    // gatling - czubek
+    // skrzydla - brzegi
+    // skrzydlo prawe - uszczypniecie
+    // kokpit - ster
+    // kadlub - tyl - na plasko
+    // kadlub - dziub - dookola
+    //
+    
+    lines.append(&mut GetWingsLines(&sceneData.surfaces[3], &display));
+    lines.append(&mut GetCockpitLines(&sceneData.surfaces[2], &display));
+    lines.append(&mut GetGatlingLines(&sceneData.surfaces[0], &display));
+    lines.append(&mut GetBodyLines(&sceneData.surfaces[1], &display));
+
+    // razem jest 6 nieciągłości do rozważenia
 
 	let mut camera = Camera::new(-45.0, 30.0, Vector3::new(0.0, 0.0, 0.0), 3.0,  3.14/5.0, 0.1, 100.0, 3.0/4.0);
 
@@ -164,13 +243,14 @@ fn main()
 	};
 
 	let mut t: f32 = -0.5;
-	let mut innerDiv : f32 = 3.0;
-	let mut outerDiv : f32 = 3.0;
+	let mut innerDiv : f32 = 1.0;
+	let mut outerDiv : f32 = 1.0;
 	let mut now = Instant::now();
 	let mut mode : i32 = 0;
 	let mut filled : bool = true;
 	let mut lightPos = Vector3::<f32>::new(2.0, 2.0, 2.0);
 	let mut drawPolygon = false;
+    let mut toolRadius: f32 = 0.0;
 	loop
 	{
 		if(&keyboard).IsButtonDown(KeyCode::Escape)
@@ -251,10 +331,15 @@ fn main()
 					texHeight: &heightTexture, 
 					viewModel: viewMat.Content(), 
 					perspective : perspectiveMat.Content(),
+                    tool: toolRadius,
 					x: bspl.x,
 					y: bspl.y}, &surfaceParams).unwrap();
 					
 				}
+                for line in &lines {
+                    //println!("drawing line!");
+                    target.draw(line.GetVertices(), line.GetIndices(), &outlineProgram, &uniform!{t:t, mat: mat.Content()}, &outlineParams).unwrap();
+                }
 			},
 			_=> mode = 0
 		}

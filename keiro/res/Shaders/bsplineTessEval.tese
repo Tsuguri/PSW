@@ -21,6 +21,7 @@ mat4 MVP = perspective * viewModel;
 uniform sampler2D texHeight;
 uniform int x;
 uniform int y;
+uniform float tool;
 
 uniform vec3 cameraPosition;
 
@@ -185,7 +186,7 @@ void main()
 
 	vec3 pos = (viewModel * vec4(att_out.worldPosition, 1)).xyz;
 	float level = 6 - GetZFactor(pos.z);
-	pos = att_out.worldPosition;
+	pos = att_out.worldPosition + tool*att_out.normal;
 	att_out.tangent = normalize(vDerivative);
 	att_out.binormal = normalize(uDerivative);
 	gl_Position = MVP * vec4(pos, 1);

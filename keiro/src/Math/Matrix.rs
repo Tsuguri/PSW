@@ -1,15 +1,23 @@
 use std::ops::Mul;
 use std::ops::Add;
 use std::convert::From;
+use std::ops::Index;
+use std::ops::IndexMut;
 
 use Math::Vector::*;
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug)]
 pub struct Matrix4<T> where T: Mul<Output = T> + Add<Output = T> + Copy
 {
 	content: [[T; 4]; 4],
 }
 
+
+impl<T> Matrix4<T> where T: Default + Mul<Output = T> + Add<Output=T> + Copy{
+    pub fn empty() -> Matrix4<T> {
+        Matrix4 {content: [[Default::default();4];4]}
+    }
+}
 
 
 impl<T> Matrix4<T> where T: Mul<Output = T> + Add<Output = T> + Copy
@@ -58,6 +66,19 @@ impl<T> Matrix4<T> where T: Mul<Output = T> + Add<Output = T> + Copy
 			self.content[0][3],self.content[1][3],self.content[2][3],self.content[3][3],
 		)
 	}
+}
+
+impl<T> Index<(usize,usize)> for Matrix4<T> where T: Mul<Output=T> + Add<Output=T> + Copy {
+    type Output = T;
+    fn index<'a>(&'a self, index: (usize, usize)) -> &'a T {
+        &self.content[index.0][index.1]
+    }
+}
+
+impl<T> IndexMut<(usize, usize)> for Matrix4<T> where T: Mul<Output = T> + Add<Output=T> + Copy{
+    fn index_mut<'a>(&'a mut self, index: (usize, usize)) -> &mut T {
+        &mut self.content[index.0][index.1]
+    }
 }
 
 impl<T> Mul for Matrix4<T> where T : Mul<Output = T> + Add<Output = T> + Copy
