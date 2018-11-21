@@ -5,6 +5,7 @@ out vec4 color;
 in Attributes
 {
 	vec3 worldPosition;
+	vec3 pos;
 	vec3 normal;
 	vec2 tex;
 	vec3 tangent;
@@ -29,9 +30,7 @@ void main()
 {
 	vec3 colorTmp = texture(texDiffuse, att_in.tex).rgb;
 	colorTmp = pow(colorTmp, vec3(gamma));
-	vec3 norm = texture(texNormal, att_in.tex).rgb;
-	norm = pow(norm, vec3(gamma));
-	norm = normalize(norm.x * att_in.tangent + norm.y * att_in.binormal + norm.z * att_in.normal);
+	vec3 norm = -att_in.normal;
 	// Ambient
 	vec3 ambient = ambientStrength * lightColor;
 
@@ -48,6 +47,7 @@ void main()
 	vec3 specular = lightColor * spec * specularStrength;
 	vec3 result = (ambient + diffuse) * colorTmp + specular;
 	//result = pow(result, vec3(1.0 / gamma));
+	//color = vec4(vec3(att_in.pos.z), 1.0);
 	color = vec4(result, 1.0);
 	//color = vec4(norm, 1.0);
 }

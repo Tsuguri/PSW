@@ -14,6 +14,5 @@ void main()
 {
 	att_out.worldPosition = position;
 	vec3 pos = position;
-	pos.y+=0.01;
 	gl_Position = mat * vec4(pos, 1.0);
 }

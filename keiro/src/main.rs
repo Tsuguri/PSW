@@ -24,6 +24,7 @@ use Renderer::DataTypes::*;
 use Renderer::Camera::*;
 use Math::Vector::Vector3;
 use Data::deser;
+use glium::framebuffer::ToDepthAttachment;
 
 fn LoadTexture(display: &glium::backend::Facade, fileName: &String) -> glium::texture::Texture2d
 {
@@ -34,6 +35,13 @@ fn LoadTexture(display: &glium::backend::Facade, fileName: &String) -> glium::te
 	let image_dimensions = image.dimensions();
 	let image = glium::texture::RawImage2d::from_raw_rgba_reversed(image.into_raw(), image_dimensions);
 	glium::texture::Texture2d::new(display,image).unwrap()
+}
+
+fn SaveTextureToFile(image: glium::texture::RawImage2d<u8>, name: &str) {
+    use std::path::Path;
+    let image = image::ImageBuffer::from_raw(image.width, image.height, image.data.into_owned()).unwrap();
+    let image = image::DynamicImage::ImageRgba8(image).flipv();
+    image.save(name).unwrap();
 }
 
 fn LoadFileContent(filename: &String) -> String
@@ -69,9 +77,22 @@ fn LineFromPoints<'a, I>(points: I, display: &glium::backend::Facade) -> Model<P
     let indices: Vec<u32> = (0..verts.len() as u32).collect();
 
     let v = glium::VertexBuffer::new(display, &verts).unwrap();
-    let i = glium::index::IndexBuffer::new(display, glium::index::PrimitiveType::LineStrip, &indices).unwrap();
+    let i = glium::index::IndexBuffer::new(display, glium::index::PrimitiveType::Points, &indices).unwrap();
     Model::new(v,i)
 
+}
+
+fn rect(display: &glium::backend::Facade) -> Model<PositionVertex> {
+   let verts = vec![
+    PositionVertex::new(Vector3::new(-1.0,-1.0,0.0)),
+    PositionVertex::new(Vector3::new(-1.0,1.0,0.0)),
+    PositionVertex::new(Vector3::new(1.0,-1.0,0.0)),
+    PositionVertex::new(Vector3::new(1.0,1.0,0.0)),
+   ]; 
+   let indices = vec![0,1,2, 2,1,3];
+   let v = glium::VertexBuffer::new(display, &verts).unwrap();
+   let i = glium::index::IndexBuffer::new(display, glium::index::PrimitiveType::TrianglesList, &indices).unwrap();
+   Model::new(v,i)
 }
 
 fn PatchToBsplines(patch: &Data::Patch, display: &glium::backend::Facade) -> Box<BezierPatch> {
@@ -148,8 +169,7 @@ fn GetCockpitLines(surf: &Data::Surface, display: &glium::backend::Facade)->Vec<
     let mut lines = Vec::new();
     let v = surf.v as f32;
 
-    // prawa krawedz
-    let poss : Vec<Vector3<f32>> = (70..100).map(|x| surf.evaluate(0.0, v*(x as f32)/100.0)).collect();
+    let poss : Vec<Vector3<f32>> = (70..100).map(|x| surf.evaluate(surf.u as f32 - 1.0, v*(x as f32)/100.0)).collect();
     lines.push(LineFromPoints((&poss).into_iter(), display));
 
     lines
@@ -166,6 +186,53 @@ fn GetBodyLines(surf: &Data::Surface, display: &glium::backend::Facade)->Vec<Mod
     lines
 }
 
+fn render<S>(target: &mut S, d: &RenderingData) where S: glium::Surface {
+	let lightPos = Vector3::<f32>::new(d.t.sin(), 2.0, d.t.cos());
+
+	target.clear_color(0.0,0.6,0.7,1.0);
+	target.clear_depth(1.0);
+	
+	let viewMat = d.camera.GetViewMatrix().Transposed();
+	let perspectiveMat = d.camera.GetProjectionMatrix().Transposed();
+	let mat = viewMat * perspectiveMat;
+
+	for bspl in &d.surfaces
+	{
+	    target.draw(bspl.surface.GetVertices(),bspl.surface.GetIndices(), &d.bsplineProgram, &uniform!{ t: d.t, 
+		    lightPosition : lightPos.Content(), 
+		    cameraPosition : d.camera.GetPosition().Content(), 
+		    inner: 1.0f32, 
+		    outer: 1.0f32, 
+		    texDiffuse: &d.diffuseTexture, 
+		    //texNormal: &normalTexture, 
+		    //texHeight: &heightTexture, 
+		    viewModel: viewMat.Content(), 
+		    perspective : perspectiveMat.Content(),
+            tool: d.toolRadius,
+		    x: bspl.x,
+		    y: bspl.y
+        }, &d.surfaceParams).unwrap();
+		
+	}
+    for line in &d.lines {
+        //println!("drawing line!");
+        target.draw(line.GetVertices(), line.GetIndices(), &d.contLinesProgram , &uniform!{t:d.t, mat: mat.Content(), tool: d.toolRadius}, &d.surfaceParams).unwrap();
+    }
+}
+
+struct RenderingData<'a> {
+    diffuseTexture:  glium::texture::Texture2d,
+    camera: Camera,
+    surfaces: Vec<Box<BezierPatch>>,
+    lines: Vec<Model<PositionVertex>>,
+    surfaceParams: glium::DrawParameters<'a>,
+    t: f32,
+    toolRadius: f32,
+    bsplineProgram: glium::Program,
+    contLinesProgram: glium::Program,
+
+}
+
 fn main()
 {
     let mut lines = Vec::<Model<PositionVertex>>::new();
@@ -174,8 +241,6 @@ fn main()
 	let display = glium::glutin::WindowBuilder::new().with_title("Super Paths").build_glium().unwrap();
 
 	let diffuseTexture = LoadTexture(&display, &String::from("res/diffuse.jpg"));
-	let normalTexture = LoadTexture(&display, &String::from("res/normals.jpg"));
-	let heightTexture = LoadTexture(&display, &String::from("res/height.jpg"));
 
 	let triangleVert = LoadFileContent(&String::from("res/Shaders/triangleVert.vert"));
 	let outlineVert = LoadFileContent(&String::from("res/Shaders/outlineVert.vert"));
@@ -185,10 +250,15 @@ fn main()
 	let bsplineTessControl = LoadFileContent(&String::from("res/Shaders/bsplineTessControl.tesc"));
 	let triangleTessEval = LoadFileContent(&String::from("res/Shaders/triangleTessEval.tese"));
 	let bsplineTessEval = LoadFileContent(&String::from("res/Shaders/bsplineTessEval.tese"));
+    let spheresGeometry = LoadFileContent(&String::from("res/Shaders/spheresGeometry.geom"));
+
+    let rectVert = LoadFileContent(&String::from("res/Shaders/rect.vert"));
+    let rectFrag = LoadFileContent(&String::from("res/Shaders/rect.frag"));
 
     let sceneData = deser("res/model.xml");
 
     let bspline = SceneToBsplines(&sceneData, &display);
+    let rect = rect(&display);
 
     // 0 - gatling
     // 1 - kadlub
@@ -211,18 +281,22 @@ fn main()
 
     // razem jest 6 nieciągłości do rozważenia
 
-	let mut camera = Camera::new(-45.0, 30.0, Vector3::new(0.0, 0.0, 0.0), 3.0,  3.14/5.0, 0.1, 100.0, 3.0/4.0);
 
 	let mut keyboard : KeyboardState = Default::default();
 	let mut mouse : MouseState = Default::default();
 
-	let shaderSource = glium::program::SourceCode { vertex_shader : &triangleVert,
-									 tessellation_control_shader : Option::Some(&triangleTessControl),
-									 tessellation_evaluation_shader : Option::Some(&triangleTessEval),
-									 geometry_shader : Option::None,
-									 fragment_shader : &triangleFrag };
-	let shaderProgram = glium::Program::new(&display, shaderSource).unwrap();
-	let outlineProgram = glium::Program::from_source(&display, &outlineVert, &outlineFrag, Option::None).unwrap();
+
+    let spheresShaderSource = glium::program::SourceCode {
+        vertex_shader: &outlineVert,
+        tessellation_control_shader: Option::None,
+        tessellation_evaluation_shader: Option::None,
+        geometry_shader: Option::Some(&spheresGeometry),
+        fragment_shader: &outlineFrag
+    };
+	//let shaderProgram = glium::Program::new(&display, shaderSource).unwrap();
+    let contLinesProgram = glium::Program::new(&display, spheresShaderSource).unwrap();
+
+    let rectProgram = glium::Program::from_source(&display, &rectVert, &rectFrag, Option::None).unwrap();
 
 	let shaderSource = glium::program::SourceCode { vertex_shader : &triangleVert,
 									 tessellation_control_shader : Option::Some(&bsplineTessControl),
@@ -231,26 +305,39 @@ fn main()
 									 fragment_shader : &triangleFrag };
 	let bsplineProgram = glium::Program::new(&display, shaderSource).unwrap();
 
-	let outlineParams = glium::DrawParameters {
+	/*let outlineParams = glium::DrawParameters {
 		polygon_mode : glium::draw_parameters::PolygonMode::Line,
 		depth : glium::Depth {test : glium::DepthTest::IfLess, write : true, ..Default::default()},
 		.. Default::default()
-	};
+	};*/
 	let mut surfaceParams = glium::DrawParameters {
 		polygon_mode: glium::draw_parameters::PolygonMode::Fill,
 		depth : glium::Depth {test : glium::DepthTest::IfLess, write : true, ..Default::default()},		
 		.. Default::default()
 	};
 
-	let mut t: f32 = -0.5;
-	let mut innerDiv : f32 = 1.0;
-	let mut outerDiv : f32 = 1.0;
+    let depth = glium::texture::Texture2d::empty(&display, 1920, 1080).unwrap();
+    let depthBuf = glium::texture::depth_texture2d::DepthTexture2d::empty(&display, 1920, 1080).unwrap();
+
+    let mut fb = glium::framebuffer::SimpleFrameBuffer::with_depth_buffer(&display, &depth, &depthBuf).unwrap();
+    let mut fb2 = glium::framebuffer::SimpleFrameBuffer::new(&display, &depth).unwrap();
+
+    display.release_shader_compiler();
+
+    let mut drawParams = RenderingData {
+        surfaceParams,
+	    camera :Camera::new(-45.0, 30.0, Vector3::new(0.0, 0.0, 0.0), 3.0,  3.14/5.0, 0.1, 50.0, 3.0/4.0),
+        diffuseTexture,
+        lines,
+        surfaces: bspline,
+        t: -0.5,
+        toolRadius: -0.8,
+        bsplineProgram,
+        contLinesProgram
+    };
+
 	let mut now = Instant::now();
-	let mut mode : i32 = 0;
 	let mut filled : bool = true;
-	let mut lightPos = Vector3::<f32>::new(2.0, 2.0, 2.0);
-	let mut drawPolygon = false;
-    let mut toolRadius: f32 = 0.0;
 	loop
 	{
 		if(&keyboard).IsButtonDown(KeyCode::Escape)
@@ -260,27 +347,18 @@ fn main()
 		let dt = now.elapsed();
 		let duration = dt.as_secs() as f32 + dt.subsec_nanos() as f32 / 1_000_000_000.0;
 		now = Instant::now();
-		t += duration;
+		drawParams.t += duration;
 
-		lightPos = Vector3::<f32>::new(t.sin(), 2.0, t.cos());
 		let mouseDT = mouse.GetMouseMove();
 		if mouse.RightButtonDown()
 		{
-			camera.ModifyRadius(mouseDT[1] / 10.0);
+			drawParams.camera.ModifyRadius(mouseDT[1] / 10.0);
 		}
 		if mouse.LeftButtonDown()
 		{
-			camera.ModifyXAngle(-mouseDT[1] / 3.0);
-			camera.ModifyYAngle(-mouseDT[0] / 3.0);
+			drawParams.camera.ModifyXAngle(-mouseDT[1] / 3.0);
+			drawParams.camera.ModifyYAngle(-mouseDT[0] / 3.0);
 			
-		}
-		if keyboard.ButtonPressedInLastFrame(KeyCode::N)
-		{
-			mode +=1;
-		}
-		if keyboard.ButtonPressedInLastFrame(KeyCode::G)
-		{
-			drawPolygon = !drawPolygon;
 		}
 		if keyboard.ButtonPressedInLastFrame(KeyCode::F)
 		{
@@ -294,55 +372,27 @@ fn main()
 				surfaceParams.polygon_mode = glium::draw_parameters::PolygonMode::Line;				
 			}
 		}
-		let mut target = display.draw();
-		target.clear_color(0.0,0.6,0.7,1.0);
-		target.clear_depth(1.0);
+        if keyboard.ButtonPressedInLastFrame(KeyCode::P) {
+           //SaveTextureToFile(display.read_front_buffer(), "/home/adam/tmp.png"); 
 
-		let viewMat = camera.GetViewMatrix().Transposed();
-		let perspectiveMat = camera.GetProjectionMatrix().Transposed();
-		let mat = viewMat * perspectiveMat;
-		let uniforms = uniform!{ t: t, 
-					lightPosition : lightPos.Content(), 
-					cameraPosition : camera.GetPosition().Content(), 
-					inner: innerDiv, 
-					outer: outerDiv, 
-					texDiffuse: &diffuseTexture, 
-					texNormal: &normalTexture, 
-					texHeight: &heightTexture, 
-					viewModel: viewMat.Content(), 
-					perspective : perspectiveMat.Content()};
-		match mode
-		{
-			0=>
-			{
-				for bspl in &bspline
-				{
-					if(drawPolygon)
-					{
-						target.draw(bspl.mesh.GetVertices(), bspl.mesh.GetIndices(), &outlineProgram, &uniform!{t: t, mat: mat.Content()}, &outlineParams).unwrap();
-					}
-				target.draw(bspl.surface.GetVertices(),bspl.surface.GetIndices(), &bsplineProgram, &uniform!{ t: t, 
-					lightPosition : lightPos.Content(), 
-					cameraPosition : camera.GetPosition().Content(), 
-					inner: innerDiv, 
-					outer: outerDiv, 
-					texDiffuse: &diffuseTexture, 
-					texNormal: &normalTexture, 
-					texHeight: &heightTexture, 
-					viewModel: viewMat.Content(), 
-					perspective : perspectiveMat.Content(),
-                    tool: toolRadius,
-					x: bspl.x,
-					y: bspl.y}, &surfaceParams).unwrap();
-					
-				}
-                for line in &lines {
-                    //println!("drawing line!");
-                    target.draw(line.GetVertices(), line.GetIndices(), &outlineProgram, &uniform!{t:t, mat: mat.Content()}, &outlineParams).unwrap();
-                }
-			},
-			_=> mode = 0
-		}
+           println!("rendering");
+           render(&mut fb, &drawParams);
+
+            fb2.draw(rect.GetVertices(), rect.GetIndices(), &rectProgram, &uniform!(texSampler: depthBuf.sampled()), &glium::DrawParameters{..Default::default()}).unwrap();
+
+           //SaveTextureToFile(fb, "/home/adam/tmp.png"); 
+           //let pixels : Vec<(u8, u8, u8, u8)> = depth.read();
+           //let data :i32 = pixels.read().unwrap();
+
+           println!("saving");
+           SaveTextureToFile(depth.read(), "/home/adam/depth.png");
+           println!("done");
+        }
+		let mut target = display.draw();
+
+        render(&mut target, &drawParams);
+
+
 
 		target.finish().unwrap();
 

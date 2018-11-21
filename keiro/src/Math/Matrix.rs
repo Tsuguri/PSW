@@ -150,4 +150,6 @@ impl<T> Matrix4<T> where T: From<f32> + Mul<Output = T> + Add<Output = T> + Copy
             T::from(0.0), T::from(0.0), T::from(1.0), T::from(0.0) 
 		)
 	}
+
+    pub fn Ortho(near: f32, far: f32,
 }

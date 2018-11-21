@@ -9,6 +9,7 @@ in Attribs
 
 out Attributes{
 	vec3 worldPosition;
+	vec3 pos;
 	vec3 normal;
 	vec2 tex;
 	vec3 tangent;
@@ -186,8 +187,9 @@ void main()
 
 	vec3 pos = (viewModel * vec4(att_out.worldPosition, 1)).xyz;
 	float level = 6 - GetZFactor(pos.z);
-	pos = att_out.worldPosition + tool*att_out.normal;
+	pos = att_out.worldPosition + att_out.normal*tool;
 	att_out.tangent = normalize(vDerivative);
 	att_out.binormal = normalize(uDerivative);
 	gl_Position = MVP * vec4(pos, 1);
+	att_out.pos = gl_Position.xyz;
 }
