@@ -519,7 +519,7 @@ ApplicationWindow {
             OrbitCameraController {
                 camera: camera
                 linearSpeed: 1000.0
-                lookSpeed: 500.0
+                500.0
             }
             components: [
                 RenderSettings {

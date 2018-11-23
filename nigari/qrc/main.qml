@@ -27,11 +27,15 @@ ApplicationWindow {
 
     Simulation {
         id:simulation
+        cubeSide: Number.fromLocaleString(lengthInput.text)
+        ro: Number.fromLocaleString(roInput.text)
     }
 
-    property bool diagonalEnabled: true
-    property bool cubeEnabled: true
+    property bool diagonalEnabled: diagonalCheck.checked
+    property bool cubeEnabled: cubeCheck.checked
     property bool pathEnabled: true
+    property bool gravityEnabled: gravityCheck.checked
+    property real cubeLen: simulation.cubeSide
 
 
     Rectangle {
@@ -41,6 +45,91 @@ ApplicationWindow {
             left: parent.left
             top: parent.top
             bottom: parent.bottom
+        }
+
+        Column {
+            anchors.fill: parent
+
+            Button {
+                text: simulation.running ?  "Pause" : "Start"
+                onClicked: simulation.toggleRun()
+                width: parent.width
+                ToolTip.visible: hovered
+                ToolTip.text: "Start or pause simulation"
+            }
+
+            Button {
+                text: "Reset"
+                onClicked: {simulation.reset(); trace.reset();}
+                width: parent.width
+                ToolTip.visible: hovered
+                ToolTip.text: "Will stop simulation and reset all data"
+            }
+
+            CheckBox{
+                id: diagonalCheck
+                checked: true
+                text: "diagonal"
+                ToolTip.visible: hovered
+                ToolTip.text: "Show/hide diagonal"
+            }
+
+            CheckBox{
+                id:cubeCheck 
+                checked: true
+                text: "cube"
+                ToolTip.visible: hovered
+                ToolTip.text: "Show/hide cube"
+            }
+            CheckBox{
+                id:gravityCheck
+                checked: true
+                text: "gravity"
+                ToolTip.visible: hovered
+                ToolTip.text: "Show/hide gravity vector"
+            }
+
+            GridLayout {
+                columns: 2
+                width: 200
+
+                Text {
+                    text: " ro"
+                }
+
+                DecimalInput {
+                    id: roInput
+                    text: "1,0"
+                    Layout.fillWidth: true
+                    min: 0.001
+                    max: 1000.0
+                    decimals: 3
+                }
+
+                Text {
+                    text: " cube side"
+                }
+
+                DecimalInput {
+                    id: lengthInput
+                    text: "1,0"
+                    Layout.fillWidth: true
+                    min: 0.01
+                    max: 20.0
+                    decimals: 3
+                }
+                Text {
+                    text: "trace len"
+                }
+
+                SpinBox {
+                    id: traceLen
+                    value: 200
+                    to: 2000
+                    from: 1
+                    editable: true
+                }
+            }
         }
 
         width: 250
@@ -76,6 +165,7 @@ ApplicationWindow {
             OrbitCameraController {
                 camera: camera
                 linearSpeed: 100.0
+                lookSpeed: 500.0
             }
 
             components: [
@@ -97,22 +187,29 @@ ApplicationWindow {
             PhongAlphaMaterial {
                 id: cubeMat
                 ambient: "gray"
-                alpha: 0.7
+                alpha: 0.9
             }
             PhongAlphaMaterial {
                 id: baseMat
-                ambient: "lightgreen"
-                alpha: 0.5
+                ambient: "darkblue"
+                alpha: 0.7
+            }
+            PhongAlphaMaterial {
+                id: gravityMat
+                ambient: "red"
+                alpha: 0.9
             }
 
-            SphereMesh {
+            CuboidMesh {
                 id: baseMesh
-                radius: 1
+                xExtent: 10
+                yExtent: 0.2
+                zExtent: 10
             }
 
             CuboidMesh {
                 id: cubeMesh
-                property real len: 5
+                property real len: cubeLen
                 property var center: Qt.vector3d(len/2, len/2, len/2)
                 xExtent: len
                 yExtent: len
@@ -126,6 +223,7 @@ ApplicationWindow {
             }
             Transform {
                 id: frameTransform
+                rotation: simulation.rotation
             }
 
             Transform {
@@ -139,9 +237,21 @@ ApplicationWindow {
                 translation: cubeMesh.center
             }
 
+            Transform {
+                id: gravityTransform
+                translation: Qt.vector3d(0,-(cubeMesh.len*Math.sqrt(3))/2, 0)
+                rotation: simulation.quatFromTo(Qt.vector3d(0,1,0), Qt.vector3d(0,-1,0))
+            }
+
             Entity {
                 id: base
                 components: [baseMat, baseMesh]
+            }
+
+            Entity {
+                id: gravity
+                enabled: gravityEnabled
+                components: [diagonalMesh, gravityTransform, gravityMat]
             }
 
 
@@ -150,7 +260,7 @@ ApplicationWindow {
 
                 Entity {
                     id: cube
-                    enalbed: cubeEnabled
+                    enabled: cubeEnabled
                     components: [cubeMat, cubeMesh, cubeTransform]
                 }
 
@@ -160,11 +270,24 @@ ApplicationWindow {
                     components: [baseMat, diagonalMesh, diagonalTransform]
                 }
 
+
                 components: [frameTransform]
             }
 
+                Trace {
+                    id: trace
+                    traceLen: traceLen.value
+                }
         } // root entity
     
     } // Scene3D
+    Connections {
+        target:simulation 
+        onRotationChanged: {
+            var pos = simulation.quatTimesVec(simulation.rotation, Qt.vector3d(cubeLen, cubeLen, cubeLen));
+            trace.newPoint(pos);
+        }
+
+    }
 
 } // ApplicationWindow

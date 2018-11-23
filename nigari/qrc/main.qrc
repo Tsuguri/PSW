@@ -2,5 +2,6 @@
     <qresource prefix="/">
         <file>main.qml</file>
 	<file>Vector.qml</file>
+	<file>DecimalInput.qml</file>
     </qresource>
 </RCC>
