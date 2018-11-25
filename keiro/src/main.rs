@@ -30,7 +30,7 @@ use Data::deser;
 //use glium::framebuffer::ToDepthAttachment;
 use Utils::{LoadTexture, LoadFileContent, SaveTextureToFile};
 
-use Paths::generate_rough;
+use Paths::{generate_rough, generate_flat};
 
 
 fn SceneToBsplines(scene: &Data::Scene, display: &glium::backend::Facade) -> Vec<Box<BezierPatch>> {
@@ -114,7 +114,6 @@ fn PatchToBsplines(patch: &Data::Patch, display: &glium::backend::Facade) -> Box
 	let surfIndic = glium::index::IndexBuffer::new(display, glium::index::PrimitiveType::Patches{ vertices_per_patch : 16}, &indic2).unwrap();
 	Box::new(BezierPatch {mesh : Model::new(verts, indices), surface : Model::new(verts2, surfIndic), x : 0, y : 0})
 }
-
 
 struct BezierPatch
 {
@@ -270,7 +269,6 @@ fn main()
     let rect2 = rect(&display, 1.0f32);
 
     let ground = groundRect(&display, 7.9f32, 0.9);
-    let ground2 = groundRect(&display, 7.5f32, 0.9);
 
     // 0 - gatling
     // 1 - kadlub
@@ -329,8 +327,9 @@ fn main()
 		.. Default::default()
 	};
 
-    let depth = glium::texture::Texture2d::empty(&display, 3000, 3000).unwrap();
-    let depthBuf = glium::texture::depth_texture2d::DepthTexture2d::empty(&display, 3000, 3000).unwrap();
+    let depSize = 1872;
+    let depth = glium::texture::Texture2d::empty(&display, depSize, depSize).unwrap();
+    let depthBuf = glium::texture::depth_texture2d::DepthTexture2d::empty(&display, depSize, depSize).unwrap();
 
     let mut fb = glium::framebuffer::SimpleFrameBuffer::with_depth_buffer(&display, &depth, &depthBuf).unwrap();
     let mut fb2 = glium::framebuffer::SimpleFrameBuffer::new(&display, &depth).unwrap();
@@ -405,16 +404,37 @@ fn main()
            //let pixels : Vec<(u8, u8, u8, u8)> = depth.read();
            //let data :i32 = pixels.read().unwrap();
            println!("reading data");
-           let data = depth.read();
+  //         let data = depth.read();
 
            println!("genrating rough paths");
-           let roughPath = generate_rough(-7.5, 7.5, -7.5, 7.5, 2.0, 5.0, 0.8, (-10.0, -10.0, 5.0), data);
+ //          let roughPath = generate_rough(-7.5, 7.5, -7.5, 7.5, 2.0, 5.0, 0.8, (-10.0, -10.0, 5.0), data);
 
-           points_to_file(&roughPath, "/home/adam/paths/r1.k16");
+//           points_to_file(&roughPath, "/home/adam/paths/r1.k16");
 
-           //println!("saving");
-           //SaveTextureToFile(depth.read(), "/home/adam/depth.png");
-           println!("done");
+            let ground2 = groundRect(&display, 10.0f32, 0.0);
+            drawParams.ground = ground2;
+            drawParams.toolRadius = -0.6;
+
+		    let viewMat = Matrix4::Translation(0.0, 0.0, 5.0)
+                    * Matrix4::RotationX(-3.14/2.0);
+	        let viewMat = viewMat.Transposed();
+	        //let perspectiveMat = drawParams.camera.GetProjectionMatrix().Transposed();
+            let side = 7.8;
+            let perspectiveMat = Matrix4::<f32>::Ortho(-side, side, -side, side).Transposed();
+            render(&mut fb, &drawParams, &viewMat, &perspectiveMat);
+
+            fb2.draw(rect2.GetVertices(), rect2.GetIndices(), &rectProgram, &uniform!(texSampler: depthBuf.sampled()), &glium::DrawParameters{..Default::default()}).unwrap();
+
+            let data = depth.read();
+
+            let flat = generate_flat(-7.5, 7.5, -7.5, 7.5, 2.0, 5.0, 0.6, (-10.0, -10.0, 5.0), data);
+
+            points_to_file(&flat, "/home/adam/paths/r2.f12");
+
+
+            //println!("saving");
+            //SaveTextureToFile(depth.read(), "/home/adam/depth.png");
+            println!("done");
         }
 		let mut target = display.draw();
 
