@@ -269,7 +269,7 @@ fn main()
     let bspline = SceneToBsplines(&sceneData, &display);
     let rect2 = rect(&display, 1.0f32);
 
-    let ground = groundRect(&display, 7.5f32, 0.9);
+    let ground = groundRect(&display, 7.9f32, 0.9);
     let ground2 = groundRect(&display, 7.5f32, 0.9);
 
     // 0 - gatling
