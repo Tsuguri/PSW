@@ -29,6 +29,9 @@ ApplicationWindow {
         id:simulation
         cubeSide: Number.fromLocaleString(lengthInput.text)
         ro: Number.fromLocaleString(roInput.text)
+        diagonalAngle: diagonalAngle.value
+        angleVelocity: angleSpeed.value
+        gravity: gravityCheck.checked
     }
 
     property bool diagonalEnabled: diagonalCheck.checked
@@ -88,6 +91,13 @@ ApplicationWindow {
                 ToolTip.visible: hovered
                 ToolTip.text: "Show/hide gravity vector"
             }
+            CheckBox {
+                id: traceCheck
+                checked: true
+                text: "trace"
+                ToolTip.visible: hovered
+                ToolTip.text: "Show/hide diagonal path"
+            }
 
             GridLayout {
                 columns: 2
@@ -128,6 +138,28 @@ ApplicationWindow {
                     to: 2000
                     from: 1
                     editable: true
+                }
+                Text {
+                    text: " w"
+                }
+                SpinBox {
+                    id: angleSpeed
+                    value: 1000
+                    from: 0
+                    to: 10000000
+                    editable: true
+                    enabled: !simulation.running
+                }
+                Text {
+                    text: " angle"
+                }
+                SpinBox {
+                    id: diagonalAngle
+                    value: 0
+                    from: 0
+                    to: 180
+                    editable: true
+                    enabled: !simulation.running
                 }
             }
         }
@@ -277,6 +309,7 @@ ApplicationWindow {
                 Trace {
                     id: trace
                     traceLen: traceLen.value
+                    enabled: traceCheck.checked
                 }
         } // root entity
     
@@ -284,8 +317,10 @@ ApplicationWindow {
     Connections {
         target:simulation 
         onRotationChanged: {
-            var pos = simulation.quatTimesVec(simulation.rotation, Qt.vector3d(cubeLen, cubeLen, cubeLen));
-            trace.newPoint(pos);
+            if(simulation.running) {
+                var pos = simulation.quatTimesVec(simulation.rotation, Qt.vector3d(cubeLen, cubeLen, cubeLen));
+                trace.newPoint(pos);
+            }
         }
 
     }

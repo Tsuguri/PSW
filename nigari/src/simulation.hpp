@@ -7,7 +7,14 @@
 #include <QElapsedTimer>
 
 #include <QQuaternion>
+#include <QGenericMatrix>
 
+using Mat = QGenericMatrix<3,3,double>;
+
+struct State {
+    QVector3D angleVelocity;
+    QQuaternion rotation;
+};
 
 class Simulation : public QObject {
 
@@ -17,23 +24,34 @@ class Simulation : public QObject {
         Q_PROPERTY(QQuaternion rotation READ getRotation NOTIFY rotationChanged);
 
         Q_PROPERTY(bool running READ getRunning NOTIFY runningChanged);
-        Q_PROPERTY(float cubeSide WRITE setCubeSide READ getCubeSide NOTIFY cubeChanged);
-        Q_PROPERTY(float ro WRITE setRo READ getRo NOTIFY roChanged);
+        Q_PROPERTY(bool gravity READ getGravity WRITE setGravity NOTIFY gravityChanged);
+        Q_PROPERTY(double cubeSide WRITE setCubeSide READ getCubeSide NOTIFY cubeChanged);
+        Q_PROPERTY(double ro WRITE setRo READ getRo NOTIFY roChanged);
+        Q_PROPERTY(double angleVelocity WRITE setAngleVel READ getAngleVel NOTIFY angleVelChanged);
+        Q_PROPERTY(double diagonalAngle WRITE setDiagonalAngle READ getDiagonalAngle NOTIFY diagonalAngleChanged);
 
         QQuaternion getRotation() const;
-        float getCubeSide() const;
+        double getCubeSide() const;
         bool getRunning() const;
-        float getRo() const;
+        double getRo() const;
+        double getDiagonalAngle() const;
+        double getAngleVel() const;
+        bool getGravity() const;
 
-        void setCubeSide(float len);
-        void setRo(float ro);
-
+        void setCubeSide(double len);
+        void setRo(double ro);
+        void setDiagonalAngle(double val);
+        void setAngleVel(double val);
+        void setGravity(bool val);
 
 signals:
         void rotationChanged();
         void cubeChanged();
         void runningChanged();
         void roChanged();
+        void diagonalAngleChanged();
+        void angleVelChanged();
+        void gravityChanged();
 
     public:
 
@@ -50,15 +68,26 @@ signals:
     private:
 
     void tick();
+    void computeInertia();
+    void computeStartingPos();
 
-    float cube = 5.0f;
+    double Mass() const;
+
+    double cube = 5.0f;
     bool running = false;
-    float ro = 1.0f;
+    double ro = 1.0f;
   std::unique_ptr<QTimer> timer;
   std::unique_ptr<QElapsedTimer> elapsed;
   quint64 elapsedNotUsed;
 
   QQuaternion currentRotation;
   QQuaternion constantChange;
-  float time;
+  double time;
+  double diagonalAngle;
+  double angleVelocity;
+  bool gravity;
+  State prev, prevPrev;
+
+  Mat inertiaTensor;
+  Mat invertedInertiaTensor;
 };
