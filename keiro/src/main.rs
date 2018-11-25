@@ -15,6 +15,8 @@ mod Input;
 mod Renderer;
 mod Math;
 mod Data;
+mod Utils;
+mod Paths;
 
 use std::time::Instant;
 
@@ -23,36 +25,13 @@ use Input::MouseInput::*;
 use Renderer::DataTypes::*;
 use Renderer::Camera::*;
 use Math::Vector::Vector3;
+use Math::Matrix::Matrix4;
 use Data::deser;
-use glium::framebuffer::ToDepthAttachment;
+//use glium::framebuffer::ToDepthAttachment;
+use Utils::{LoadTexture, LoadFileContent, SaveTextureToFile};
 
-fn LoadTexture(display: &glium::backend::Facade, fileName: &String) -> glium::texture::Texture2d
-{
-	use std::path::Path;
-	
-	let image = image::open(&Path::new(fileName)).unwrap().to_rgba();
-	
-	let image_dimensions = image.dimensions();
-	let image = glium::texture::RawImage2d::from_raw_rgba_reversed(image.into_raw(), image_dimensions);
-	glium::texture::Texture2d::new(display,image).unwrap()
-}
+use Paths::generate_rough;
 
-fn SaveTextureToFile(image: glium::texture::RawImage2d<u8>, name: &str) {
-    use std::path::Path;
-    let image = image::ImageBuffer::from_raw(image.width, image.height, image.data.into_owned()).unwrap();
-    let image = image::DynamicImage::ImageRgba8(image).flipv();
-    image.save(name).unwrap();
-}
-
-fn LoadFileContent(filename: &String) -> String
-{
-	use std::fs::File;
-	use std::io::prelude::*;
-    let mut file = File::open(filename).expect("Unable to open the file");
-    let mut contents = String::new();
-    file.read_to_string(&mut contents).expect("Unable to read the file");
-    contents
-}
 
 fn SceneToBsplines(scene: &Data::Scene, display: &glium::backend::Facade) -> Vec<Box<BezierPatch>> {
     let mut v = Vec::with_capacity(200);
@@ -82,12 +61,24 @@ fn LineFromPoints<'a, I>(points: I, display: &glium::backend::Facade) -> Model<P
 
 }
 
-fn rect(display: &glium::backend::Facade) -> Model<PositionVertex> {
+fn groundRect(display: &glium::backend::Facade, side: f32, height: f32) -> Model<PositionVertex> {
    let verts = vec![
-    PositionVertex::new(Vector3::new(-1.0,-1.0,0.0)),
-    PositionVertex::new(Vector3::new(-1.0,1.0,0.0)),
-    PositionVertex::new(Vector3::new(1.0,-1.0,0.0)),
-    PositionVertex::new(Vector3::new(1.0,1.0,0.0)),
+    PositionVertex::new(Vector3::new(-side, height,-side)),
+    PositionVertex::new(Vector3::new(-side, height,side)),
+    PositionVertex::new(Vector3::new(side, height,-side)),
+    PositionVertex::new(Vector3::new(side, height,side)),
+   ]; 
+   let indices = vec![0,1,2, 2,1,3];
+   let v = glium::VertexBuffer::new(display, &verts).unwrap();
+   let i = glium::index::IndexBuffer::new(display, glium::index::PrimitiveType::TrianglesList, &indices).unwrap();
+   Model::new(v,i)
+}
+fn rect(display: &glium::backend::Facade, side: f32) -> Model<PositionVertex> {
+   let verts = vec![
+    PositionVertex::new(Vector3::new(-side,-side,0.0)),
+    PositionVertex::new(Vector3::new(-side,side,0.0)),
+    PositionVertex::new(Vector3::new(side,-side,0.0)),
+    PositionVertex::new(Vector3::new(side,side,0.0)),
    ]; 
    let indices = vec![0,1,2, 2,1,3];
    let v = glium::VertexBuffer::new(display, &verts).unwrap();
@@ -186,15 +177,13 @@ fn GetBodyLines(surf: &Data::Surface, display: &glium::backend::Facade)->Vec<Mod
     lines
 }
 
-fn render<S>(target: &mut S, d: &RenderingData) where S: glium::Surface {
+fn render<S>(target: &mut S, d: &RenderingData, viewMat: &Matrix4<f32>, perspectiveMat: &Matrix4<f32>) where S: glium::Surface {
 	let lightPos = Vector3::<f32>::new(d.t.sin(), 2.0, d.t.cos());
 
 	target.clear_color(0.0,0.6,0.7,1.0);
 	target.clear_depth(1.0);
 	
-	let viewMat = d.camera.GetViewMatrix().Transposed();
-	let perspectiveMat = d.camera.GetProjectionMatrix().Transposed();
-	let mat = viewMat * perspectiveMat;
+	let mat = *viewMat * *perspectiveMat;
 
 	for bspl in &d.surfaces
 	{
@@ -218,6 +207,22 @@ fn render<S>(target: &mut S, d: &RenderingData) where S: glium::Surface {
         //println!("drawing line!");
         target.draw(line.GetVertices(), line.GetIndices(), &d.contLinesProgram , &uniform!{t:d.t, mat: mat.Content(), tool: d.toolRadius}, &d.surfaceParams).unwrap();
     }
+
+    target.draw(d.ground.GetVertices(), d.ground.GetIndices(), &d.groundProgram, &uniform!{mat:mat.Content()}, &d.surfaceParams).unwrap();
+}
+
+
+fn points_to_file(pts: &Vec<Vector3<f32>>, path: &str){
+    use std::fs::File;
+    use std::io::Write;
+    // N3G01X00.000Y00.000Z60.000
+    //
+    let mut file = File::create(path).unwrap();
+    for pt in pts.iter().enumerate() {
+        write!(&mut file, "N{}X{:.3}Y{:.3}Z{:.3}\n", pt.0+1, pt.1.x()*10.0, pt.1.y()*10.0, pt.1.z()*10.0);
+    }
+
+    drop(file);
 }
 
 struct RenderingData<'a> {
@@ -225,6 +230,8 @@ struct RenderingData<'a> {
     camera: Camera,
     surfaces: Vec<Box<BezierPatch>>,
     lines: Vec<Model<PositionVertex>>,
+    ground: Model<PositionVertex>,
+    groundProgram: glium::Program,
     surfaceParams: glium::DrawParameters<'a>,
     t: f32,
     toolRadius: f32,
@@ -246,19 +253,24 @@ fn main()
 	let outlineVert = LoadFileContent(&String::from("res/Shaders/outlineVert.vert"));
 	let triangleFrag = LoadFileContent(&String::from("res/Shaders/triangleFrag.frag"));
 	let outlineFrag = LoadFileContent(&String::from("res/Shaders/outlineFrag.frag"));
-	let triangleTessControl = LoadFileContent(&String::from("res/Shaders/triangleTessControl.tesc"));
+	//let triangleTessControl = LoadFileContent(&String::from("res/Shaders/triangleTessControl.tesc"));
 	let bsplineTessControl = LoadFileContent(&String::from("res/Shaders/bsplineTessControl.tesc"));
-	let triangleTessEval = LoadFileContent(&String::from("res/Shaders/triangleTessEval.tese"));
+	//let triangleTessEval = LoadFileContent(&String::from("res/Shaders/triangleTessEval.tese"));
 	let bsplineTessEval = LoadFileContent(&String::from("res/Shaders/bsplineTessEval.tese"));
     let spheresGeometry = LoadFileContent(&String::from("res/Shaders/spheresGeometry.geom"));
 
     let rectVert = LoadFileContent(&String::from("res/Shaders/rect.vert"));
     let rectFrag = LoadFileContent(&String::from("res/Shaders/rect.frag"));
+    let groundVert = LoadFileContent(&String::from("res/Shaders/ground.vert"));
+    let groundFrag = LoadFileContent(&String::from("res/Shaders/ground.frag"));
 
     let sceneData = deser("res/model.xml");
 
     let bspline = SceneToBsplines(&sceneData, &display);
-    let rect = rect(&display);
+    let rect2 = rect(&display, 1.0f32);
+
+    let ground = groundRect(&display, 7.5f32, 0.9);
+    let ground2 = groundRect(&display, 7.5f32, 0.9);
 
     // 0 - gatling
     // 1 - kadlub
@@ -297,6 +309,7 @@ fn main()
     let contLinesProgram = glium::Program::new(&display, spheresShaderSource).unwrap();
 
     let rectProgram = glium::Program::from_source(&display, &rectVert, &rectFrag, Option::None).unwrap();
+    let groundProgram= glium::Program::from_source(&display, &groundVert, &groundFrag, Option::None).unwrap();
 
 	let shaderSource = glium::program::SourceCode { vertex_shader : &triangleVert,
 									 tessellation_control_shader : Option::Some(&bsplineTessControl),
@@ -316,8 +329,8 @@ fn main()
 		.. Default::default()
 	};
 
-    let depth = glium::texture::Texture2d::empty(&display, 1920, 1080).unwrap();
-    let depthBuf = glium::texture::depth_texture2d::DepthTexture2d::empty(&display, 1920, 1080).unwrap();
+    let depth = glium::texture::Texture2d::empty(&display, 3000, 3000).unwrap();
+    let depthBuf = glium::texture::depth_texture2d::DepthTexture2d::empty(&display, 3000, 3000).unwrap();
 
     let mut fb = glium::framebuffer::SimpleFrameBuffer::with_depth_buffer(&display, &depth, &depthBuf).unwrap();
     let mut fb2 = glium::framebuffer::SimpleFrameBuffer::new(&display, &depth).unwrap();
@@ -329,9 +342,11 @@ fn main()
 	    camera :Camera::new(-45.0, 30.0, Vector3::new(0.0, 0.0, 0.0), 3.0,  3.14/5.0, 0.1, 50.0, 3.0/4.0),
         diffuseTexture,
         lines,
+        ground,
+        groundProgram,
         surfaces: bspline,
         t: -0.5,
-        toolRadius: -0.8,
+        toolRadius: -0.9,
         bsplineProgram,
         contLinesProgram
     };
@@ -373,24 +388,39 @@ fn main()
 			}
 		}
         if keyboard.ButtonPressedInLastFrame(KeyCode::P) {
-           //SaveTextureToFile(display.read_front_buffer(), "/home/adam/tmp.png"); 
+            //SaveTextureToFile(display.read_front_buffer(), "/home/adam/tmp.png"); 
 
-           println!("rendering");
-           render(&mut fb, &drawParams);
+            println!("rendering");
 
-            fb2.draw(rect.GetVertices(), rect.GetIndices(), &rectProgram, &uniform!(texSampler: depthBuf.sampled()), &glium::DrawParameters{..Default::default()}).unwrap();
+		    let viewMat = Matrix4::Translation(0.0, 0.0, 5.0)
+                    * Matrix4::RotationX(-3.14/2.0);
+	        let viewMat = viewMat.Transposed();
+	        //let perspectiveMat = drawParams.camera.GetProjectionMatrix().Transposed();
+            let perspectiveMat = Matrix4::<f32>::Ortho(-7.5f32, 7.5, -7.5, 7.5).Transposed();
+            render(&mut fb, &drawParams, &viewMat, &perspectiveMat);
+
+            fb2.draw(rect2.GetVertices(), rect2.GetIndices(), &rectProgram, &uniform!(texSampler: depthBuf.sampled()), &glium::DrawParameters{..Default::default()}).unwrap();
 
            //SaveTextureToFile(fb, "/home/adam/tmp.png"); 
            //let pixels : Vec<(u8, u8, u8, u8)> = depth.read();
            //let data :i32 = pixels.read().unwrap();
+           println!("reading data");
+           let data = depth.read();
 
-           println!("saving");
-           SaveTextureToFile(depth.read(), "/home/adam/depth.png");
+           println!("genrating rough paths");
+           let roughPath = generate_rough(-7.5, 7.5, -7.5, 7.5, 2.0, 5.0, 0.8, (-10.0, -10.0, 5.0), data);
+
+           points_to_file(&roughPath, "/home/adam/paths/r1.k16");
+
+           //println!("saving");
+           //SaveTextureToFile(depth.read(), "/home/adam/depth.png");
            println!("done");
         }
 		let mut target = display.draw();
 
-        render(&mut target, &drawParams);
+	    let viewMat = drawParams.camera.GetViewMatrix().Transposed();
+	    let perspectiveMat = drawParams.camera.GetProjectionMatrix().Transposed();
+        render(&mut target, &drawParams, &viewMat, &perspectiveMat);
 
 
 

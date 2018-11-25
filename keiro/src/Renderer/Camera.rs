@@ -101,5 +101,9 @@ impl Camera
 
 		self.target + Vector3::new(-x,y,-z) * self.radius
 	}
+
+    pub fn PrintData(&self) {
+        println!(" radius: {}, yang: {}, xang: {}",self.radius, self.yAngle, self.xAngle);
+    }
 	
 }

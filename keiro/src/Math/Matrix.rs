@@ -1,5 +1,4 @@
-use std::ops::Mul;
-use std::ops::Add;
+use std::ops::{Add, Mul, Sub};
 use std::convert::From;
 use std::ops::Index;
 use std::ops::IndexMut;
@@ -104,7 +103,7 @@ impl<T> Mul for Matrix4<T> where T : Mul<Output = T> + Add<Output = T> + Copy
 	}
 }
 
-impl<T> Matrix4<T> where T: From<f32> + Mul<Output = T> + Add<Output = T> + Copy
+impl<T> Matrix4<T> where T: From<f32> + Mul<Output = T> + Add<Output = T> +Sub<Output=T>+ Copy
 {
 	pub fn RotationX(angle : f32) -> Matrix4<T>
 	{
@@ -151,5 +150,13 @@ impl<T> Matrix4<T> where T: From<f32> + Mul<Output = T> + Add<Output = T> + Copy
 		)
 	}
 
-    pub fn Ortho(near: f32, far: f32,
+    pub fn Ortho(l: f32, r: f32, b: f32, t: f32) -> Matrix4<T> {
+
+        Matrix4::new(
+            T::from(2.0/(r-l)), T::from(0.0), T::from(0.0), T::from(0.0),
+            T::from(0.0), T::from(2.0/(t-b)), T::from(0.0), T::from(0.0),
+            T::from(0.0), T::from(0.0), T::from(1.0/5.0), T::from(0.0),
+            T::from(-(r+l)/(r-l)), T::from(-(t+b)/(t-b)), T::from(0.0), T::from(1.0)
+        )
+    }
 }

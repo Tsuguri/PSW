@@ -146,7 +146,7 @@ void Simulation::tick() {
 
   auto dt = elapsed->restart()*0.001;
   time += dt;
-  std::cout<<"dt: "<<dt<<std::endl;
+  //std::cout<<"dt: "<<dt<<std::endl;
   /*currentRotation = quatFromTo(QVector3D(0, 1, 0),
                                QVector3D(std::sin(time), 1, std::cos(time)));
 */
