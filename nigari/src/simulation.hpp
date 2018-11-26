@@ -9,7 +9,7 @@
 #include <QQuaternion>
 #include <QGenericMatrix>
 
-using Mat = QGenericMatrix<3,3,double>;
+using Mat = QGenericMatrix<3,3, float>;
 
 struct State {
     QVector3D angleVelocity;
@@ -61,6 +61,9 @@ signals:
     Q_INVOKABLE QQuaternion quatFromTo(const QVector3D& from, const QVector3D& to) const{
         return QQuaternion::rotationTo(from, to);
     }
+    Q_INVOKABLE QQuaternion quatTimesQuat(const QQuaternion& q1, const QQuaternion& q2) const {
+        return q1*q2;
+    }
     Q_INVOKABLE QVector3D quatTimesVec(const QQuaternion& quat, const QVector3D& vec) const{
         return quat*vec;
     }
@@ -81,7 +84,6 @@ signals:
   quint64 elapsedNotUsed;
 
   QQuaternion currentRotation;
-  QQuaternion constantChange;
   double time;
   double diagonalAngle;
   double angleVelocity;

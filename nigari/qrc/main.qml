@@ -144,7 +144,7 @@ ApplicationWindow {
                 }
                 SpinBox {
                     id: angleSpeed
-                    value: 1000
+                    value: 1
                     from: 0
                     to: 10000000
                     editable: true
@@ -255,7 +255,7 @@ ApplicationWindow {
             }
             Transform {
                 id: frameTransform
-                rotation: simulation.rotation
+                rotation: simulation.quatTimesQuat(simulation.rotation, simulation.quatFromTo(Qt.vector3d(1,1,1), Qt.vector3d(0,1,0)))
             }
 
             Transform {
@@ -265,7 +265,7 @@ ApplicationWindow {
 
             Transform {
                 id: diagonalTransform
-                rotation: simulation.quatFromTo(Qt.vector3d(0,1,0), cubeMesh.center)
+                rotation: simulation.quatFromTo(Qt.vector3d(0,cubeMesh.len * Math.sqrt(3),0), cubeMesh.center)
                 translation: cubeMesh.center
             }
 
@@ -318,7 +318,7 @@ ApplicationWindow {
         target:simulation 
         onRotationChanged: {
             if(simulation.running) {
-                var pos = simulation.quatTimesVec(simulation.rotation, Qt.vector3d(cubeLen, cubeLen, cubeLen));
+                var pos = simulation.quatTimesVec(simulation.rotation, Qt.vector3d(0, Math.sqrt(3), 0));
                 trace.newPoint(pos);
             }
         }
