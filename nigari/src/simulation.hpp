@@ -81,7 +81,6 @@ signals:
     double ro = 1.0f;
   std::unique_ptr<QTimer> timer;
   std::unique_ptr<QElapsedTimer> elapsed;
-  quint64 elapsedNotUsed;
 
   QQuaternion currentRotation;
   double time;

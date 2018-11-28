@@ -29,7 +29,7 @@ ApplicationWindow {
         id:simulation
         cubeSide: Number.fromLocaleString(lengthInput.text)
         ro: Number.fromLocaleString(roInput.text)
-        diagonalAngle: diagonalAngle.value
+        diagonalAngle: diagonalAngle.value // 0.0000000000000005
         angleVelocity: angleSpeed.value
         gravity: gravityCheck.checked
     }

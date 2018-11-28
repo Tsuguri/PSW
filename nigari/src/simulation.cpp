@@ -12,7 +12,6 @@ Simulation::Simulation(QObject *parent)
 }
 
 QQuaternion Simulation::getRotation() const {
-    // constant change jest po to, żeby wizualizacja była fajnie
     return currentRotation;
 }
 
@@ -68,18 +67,13 @@ void Simulation::toggleRun() {
   } else {
     elapsed->restart();
     timer->start();
-    elapsedNotUsed = 0;
 
     // tutaj trzeba jakoś zainicjalizować stan początkowy.
     computeStartingPos();
     auto initialVel = currentRotation * (QVector3D(0,1,0).normalized()*angleVelocity);
-    std::cout<<"initial velocity: "<<initialVel.x()<<" "<<initialVel.y()<<" "<<initialVel.z()<<std::endl;
     auto velInCube = currentRotation.inverted() * initialVel;
-    std::cout<<"initial velocity: "<<velInCube.x()<<" "<<velInCube.y()<<" "<<velInCube.z()<<std::endl;
     prev.angleVelocity = initialVel;
     prev.rotation = currentRotation;
-    prevPrev.angleVelocity = initialVel;
-    prevPrev.rotation = currentRotation;
   }
   running = !running;
   emit runningChanged();
@@ -111,14 +105,12 @@ QVector3D AngleVelMath(const Mat& i, const Mat& iInv, const QVector3D& torque, c
 }
 
 QQuaternion RotationMath(const QQuaternion& q, const QVector3D& r) {
-
-    //auto r = q*w;
     
     return QQuaternion(0.0, r.x() / 2.0, r.y() / 2.0, r.z() / 2.0) + q.normalized();
 }
 
 State RungeKutta(const State& state, const QVector3D& torque, const Mat& i, const Mat& iInv, double time){
-        auto dt = time/4;
+        auto dt = time;
 
         auto p =state.rotation.inverted()* state.angleVelocity ;
         auto kw1 = dt * AngleVelMath(i, iInv, torque, p);
@@ -128,13 +120,8 @@ State RungeKutta(const State& state, const QVector3D& torque, const Mat& i, cons
 
         auto dw = (kw1+kw2*2+kw3*2+kw4)/6.0;
 
-
         State s;
-        s.angleVelocity=state.rotation * (p+ dw);
         QQuaternion tmp(1,0,0,0);
-        //auto tmp = state.rotation;
-
-        p = state.rotation.inverted() * state.angleVelocity;
 
         auto kq1 = dt * RotationMath(tmp, p);
         auto kq2 = dt * RotationMath(tmp+kq1/2.0, p+kw1/2.0);
@@ -146,6 +133,7 @@ State RungeKutta(const State& state, const QVector3D& torque, const Mat& i, cons
         tmp = (tmp+dq).normalized();
         s.rotation = state.rotation*tmp;
         s.rotation.normalize();
+        s.angleVelocity=s.rotation * (p+ dw);
 
         return s;
 }
@@ -168,7 +156,6 @@ void Simulation::tick() {
 
   auto next = RungeKutta(prev, torque, inertiaTensor, invertedInertiaTensor,  dt);
 
-  prevPrev=prev;
   prev=next;
   currentRotation = next.rotation;
   emit rotationChanged();
