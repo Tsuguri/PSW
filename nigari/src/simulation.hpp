@@ -73,6 +73,9 @@ signals:
     void tick();
     void computeInertia();
     void computeStartingPos();
+State RK(const State& prev, const Mat& i, const Mat& iInv, double time);
+
+State RungeKuttaMethod(const State& prev, const Mat&i, const Mat& iiNv, double time);
 
     double Mass() const;
 

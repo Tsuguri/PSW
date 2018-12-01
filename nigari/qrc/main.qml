@@ -156,7 +156,7 @@ ApplicationWindow {
                 SpinBox {
                     id: diagonalAngle
                     value: 0
-                    from: 0
+                    from: -180
                     to: 180
                     editable: true
                     enabled: !simulation.running

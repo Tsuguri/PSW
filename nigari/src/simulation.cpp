@@ -61,6 +61,10 @@ void Simulation::setAngleVel(double val) {
   emit angleVelChanged();
 }
 
+std::ostream& operator<<(std::ostream& str, const QVector3D& vec) {
+    str<<vec.x()<<" "<<vec.y()<<" "<<vec.z();
+    return str;
+}
 void Simulation::toggleRun() {
   if (running) {
     timer->stop();
@@ -70,9 +74,11 @@ void Simulation::toggleRun() {
 
     // tutaj trzeba jakoś zainicjalizować stan początkowy.
     computeStartingPos();
-    auto initialVel = currentRotation * (QVector3D(0,1,0).normalized()*angleVelocity);
-    auto velInCube = currentRotation.inverted() * initialVel;
-    prev.angleVelocity = initialVel;
+    computeInertia();
+    auto initialVel = (QVector3D(0,1,0).normalized()*angleVelocity);
+    std::cout<<"Initial vel: "<<initialVel<<std::endl;
+    auto velInCube = initialVel;
+    prev.angleVelocity = velInCube;
     prev.rotation = currentRotation;
   }
   running = !running;
@@ -93,26 +99,87 @@ QVector3D operator*(const Mat& mat, const QVector3D& vec) {
   const float *data[] = {d, d + 3, d + 6};
   QVector3D vector{};
   for(int i=0; i<3; i++) {
-    vector[i] = data[i][0]*vec[0] + data[i][1]*vec[1]+data[i][2]*vec[2];
+    vector[i] = data[0][i]*vec[0] + data[1][i]*vec[1]+data[2][i]*vec[2];
   }
 
   return vector;
 }
 
+
 QVector3D AngleVelMath(const Mat& i, const Mat& iInv, const QVector3D& torque, const QVector3D& prevVel) {
 
-    return iInv * (torque + QVector3D::crossProduct(i*prevVel, prevVel));
+    std::cout<<std::endl<<std::endl;
+    auto mult = i*prevVel;
+    std::cout<<"multiplied: "<<mult<<std::endl;
+    auto cross = QVector3D::crossProduct(mult, prevVel);
+    std::cout<<"crossed: "<<cross<<std::endl;
+    auto multSum = iInv * (torque + cross);
+    std::cout<<"mult sum: "<<multSum<<std::endl;
+
+    return multSum;
 }
 
 QQuaternion RotationMath(const QQuaternion& q, const QVector3D& r) {
     
-    return QQuaternion(0.0, r.x() / 2.0, r.y() / 2.0, r.z() / 2.0) + q.normalized();
+    return q.normalized() * QQuaternion(0.0, r.x() / 2.0, r.y() / 2.0, r.z() / 2.0);
+}
+
+State Simulation::RK(const State& prev, const Mat& i, const Mat& iInv, double time) {
+    auto rota = prev.rotation.normalized();
+    auto p = prev.angleVelocity;
+
+    auto currentForce = (rota.inverted()) * QVector3D(0, -9.81, 0);
+
+    currentForce*= gravity? 1.0 : 0.0;
+    //std::cout<<"current Force: "<<currentForce.x()<<" "<<currentForce.y()<<" "<<currentForce.z()<<std::endl;
+    auto torque = QVector3D::crossProduct(QVector3D(0, cube*std::sqrt(3)/2.0, 0), currentForce);
+
+    //std::cout<<"current Torque: "<<torque.x()<<" "<<torque.y()<<" "<<torque.z()<<std::endl;
+    auto g = AngleVelMath(i, iInv, torque, p);
+    //std::cout<<"angle vel result: "<<g<<std::endl;
+    auto rot = RotationMath(rota, prev.angleVelocity);
+    State s;
+    s.rotation = rot.normalized();
+    s.angleVelocity = g;
+
+    return s;
+}
+
+State operator*(const State& one, double val) {
+    State s;
+    s.angleVelocity = one.angleVelocity*val;
+    s.rotation = one.rotation*val;
+    return s;
+}
+
+State operator+(const State& one, const State& two) {
+    State s;
+    s.angleVelocity = one.angleVelocity + two.angleVelocity;
+    s.rotation = one.rotation + two.rotation;
+    return s;
+}
+
+State Simulation::RungeKuttaMethod(const State& prev, const Mat& i, const Mat& iInv, double time) {
+
+    auto kw1 = RK(prev, i, iInv, time)* time;
+    auto kw2 = RK(prev + kw1 * 0.5, i, iInv, time) * time;
+    auto kw3 = RK(prev + kw2 * 0.5, i, iInv, time) * time;
+    auto kw4 = RK(prev + kw3, i, iInv, time) * time;
+
+    auto dw = (kw1 + kw2*2 + kw3*2 + kw4) * (1.0/6.0);
+
+    State s =prev + dw;
+    s.rotation.normalize();
+    std::cout<<"previous vel: "<<prev.angleVelocity<<" to: "<<s.angleVelocity<<std::endl;
+    return s;
+
 }
 
 State RungeKutta(const State& state, const QVector3D& torque, const Mat& i, const Mat& iInv, double time){
         auto dt = time;
 
-        auto p =state.rotation.inverted()* state.angleVelocity ;
+        //auto p =state.rotation.inverted()* state.angleVelocity ;
+        auto p = state.angleVelocity;
         auto kw1 = dt * AngleVelMath(i, iInv, torque, p);
         auto kw2 = dt * AngleVelMath(i, iInv, torque, p+ kw1 / 2.0);
         auto kw3 = dt * AngleVelMath(i, iInv, torque, p+ kw2 / 2.0);
@@ -121,7 +188,7 @@ State RungeKutta(const State& state, const QVector3D& torque, const Mat& i, cons
         auto dw = (kw1+kw2*2+kw3*2+kw4)/6.0;
 
         State s;
-        QQuaternion tmp(1,0,0,0);
+        QQuaternion tmp = state.rotation;
 
         auto kq1 = dt * RotationMath(tmp, p);
         auto kq2 = dt * RotationMath(tmp+kq1/2.0, p+kw1/2.0);
@@ -131,9 +198,9 @@ State RungeKutta(const State& state, const QVector3D& torque, const Mat& i, cons
         auto dq = (kq1+kq2*2+kq3*2+kq4)/6.0;
 
         tmp = (tmp+dq).normalized();
-        s.rotation = state.rotation*tmp;
+        s.rotation = tmp;
         s.rotation.normalize();
-        s.angleVelocity=s.rotation * (p+ dw);
+        s.angleVelocity=p+ dw;
 
         return s;
 }
@@ -142,19 +209,15 @@ void Simulation::tick() {
 
   auto dt = elapsed->restart()*0.001;
   time += dt;
-  //std::cout<<"dt: "<<dt<<std::endl;
-  /*currentRotation = quatFromTo(QVector3D(0, 1, 0),
-                               QVector3D(std::sin(time), 1, std::cos(time)));
-*/
 
   auto currentForce = (getRotation().inverted()) * QVector3D(0, -9.81, 0);
-  //std::cout<<"gravity: "<<currentForce.x()<<" "<<currentForce.y()<<" "<<currentForce.z()<<std::endl;
   currentForce*= gravity? 1.0 : 0.0;
 
 
   auto torque = QVector3D::crossProduct(QVector3D(0, cube*std::sqrt(3)/2.0, 0), currentForce);
 
-  auto next = RungeKutta(prev, torque, inertiaTensor, invertedInertiaTensor,  dt);
+  //auto next = RungeKutta(prev, torque, inertiaTensor, invertedInertiaTensor,  dt);
+  auto next = RungeKuttaMethod(prev,inertiaTensor, invertedInertiaTensor, dt);
 
   prev=next;
   currentRotation = next.rotation;
@@ -162,9 +225,9 @@ void Simulation::tick() {
 }
 
 void Simulation::computeStartingPos() {
-    auto ang = diagonalAngle / 180.0 * 3.14;
+    auto ang = (diagonalAngle) / 180.0 * 3.14;
 
-    currentRotation = quatFromTo(QVector3D(0,1,0), QVector3D(std::sin(ang), std::cos(ang),0).normalized());
+    currentRotation = quatFromTo(QVector3D(0,1,0),QVector3D(std::sin(ang), std::cos(ang),0).normalized());
     emit rotationChanged();
 }
 
@@ -204,7 +267,14 @@ void Simulation::computeInertia() {
   auto rotMat = rot.toRotationMatrix();
   auto invRot = rot.inverted().toRotationMatrix();
 
+
+  auto p = Mat(vals);
   inertiaTensor = rotMat*Mat(vals)*invRot;
+  //for(int i=0;i<9;i++)
+  //std::cout<<inertiaTensor.data()[i]<<" "<<std::endl;
 
   invertedInertiaTensor = inverse(inertiaTensor);
+  for(int i=0;i<9;i++)
+  std::cout<<invertedInertiaTensor.data()[i]<<" "<<std::endl;
+  //inertiaTensor = inverse(invertedInertiaTensor);
 }
