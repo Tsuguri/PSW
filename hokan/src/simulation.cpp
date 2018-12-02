@@ -60,6 +60,11 @@ QQuaternion Simulation::getEndQuat() const {
     return endQuat;
 }
 
+void Simulation::setSlerp(bool val){
+    std::cout<<"slerp set to: "<<val<<std::endl;
+    slerp = val;
+}
+
 void Simulation::setStartPos(const QVector3D& val) {
     startPos=val;
     std::cout<<"Start pos set to: "<<currentPos.x()<<" "<<currentPos.y()<<" "<<currentPos.z()<<std::endl;
@@ -162,6 +167,11 @@ QVector3D interpolateEuler(double at, const QVector3D& from, const QVector3D to)
 
 QQuaternion lerp(double at, const QQuaternion& from, const QQuaternion& to){
     return (from*(1-at) + to*at).normalized();
+}
+
+QQuaternion slerp(double at, const QQuaternion& from, const QQuaternion& to){
+    // TODO: implement
+    return lerp(at, from, to);
 }
 
 void Simulation::computeCurrentData(){

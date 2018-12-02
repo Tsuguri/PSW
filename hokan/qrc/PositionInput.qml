@@ -7,6 +7,8 @@ import QtQuick.Layouts 1.3
         property alias xVal:xField.value
         property alias yVal:yField.value
         property alias zVal:zField.value
+
+        property vector3d value: Qt.vector3d(xVal, yVal, zVal)
         property string text : "Position "
         columns: 4
 

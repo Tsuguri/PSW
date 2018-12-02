@@ -18,6 +18,7 @@ class Simulation : public QObject {
         explicit Simulation(QObject* parent = nullptr);
 
         Q_PROPERTY(bool running READ getRunning NOTIFY runningChanged);
+        Q_PROPERTY(bool slerp WRITE setSlerp);
         Q_PROPERTY(double animationTime READ getAnimationTime WRITE setAnimationTime NOTIFY animationTimeChanged);
 
         Q_PROPERTY(QVector3D currentPos READ getCurrentPos NOTIFY currentStateChanged);
@@ -50,6 +51,7 @@ class Simulation : public QObject {
         QQuaternion getStartQuat() const;
         QQuaternion getEndQuat() const;
 
+        void setSlerp(bool val);
         void setAnimationTime(double val);
         void setStartPos(const QVector3D& val);
         void setEndPos(const QVector3D& val);
@@ -94,6 +96,7 @@ signals:
 
 
         bool running = false;
+        bool slerp = false;
         double animationTime;
         std::unique_ptr<QTimer> timer;
 };

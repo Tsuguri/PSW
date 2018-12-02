@@ -31,12 +31,13 @@ ApplicationWindow {
 
     Simulation {
         id: simulation
-        startPos: Qt.vector3d(startPos.xVal, startPos.yVal, startPos.zVal)
-        endPos: Qt.vector3d(endPos.xVal, endPos.yVal, endPos.zVal)
-        startEuler: Qt.vector3d(startEuler.xVal, startEuler.yVal, startEuler.zVal);
-        endEuler: Qt.vector3d(endEuler.xVal, endEuler.yVal, endEuler.zVal);
+        startPos: startPos.value//Qt.vector3d(startPos.xVal, startPos.yVal, startPos.zVal)
+        endPos: endPos.value//Qt.vector3d(endPos.xVal, endPos.yVal, endPos.zVal)
+        startEuler: startEuler.value//Qt.vector3d(startEuler.xVal, startEuler.yVal, startEuler.zVal);
+        endEuler: endEuler.value//Qt.vector3d(endEuler.xVal, endEuler.yVal, endEuler.zVal);
         startQuat: Qt.quaternion(1,0,0,0)
         endQuat: Qt.quaternion(1,0,0,0)
+        slerp: slerp.checked
 
         animationTime: animationTime.value
     }
@@ -108,6 +109,11 @@ ApplicationWindow {
 
             Text {
                 text: "Quat - start"
+            }
+            CheckBox{
+                id: slerp
+                text: "use slerp"
+
             }
         } // ColumnLayout
     } // Rectangle
