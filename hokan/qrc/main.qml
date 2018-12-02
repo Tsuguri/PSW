@@ -11,6 +11,8 @@ import Qt3D.Extras 2.0
 
 import QtCharts 2.0
 
+import Hoken 1.0
+
 ApplicationWindow {
     id: appWindow
     visible: true
@@ -27,9 +29,97 @@ ApplicationWindow {
         onActivated: appWindow.close()
     }
 
+    Simulation {
+        id: simulation
+        startPos: Qt.vector3d(startPos.xVal, startPos.yVal, startPos.zVal)
+        endPos: Qt.vector3d(endPos.xVal, endPos.yVal, endPos.zVal)
+        startEuler: Qt.vector3d(startEuler.xVal, startEuler.yVal, startEuler.zVal);
+        endEuler: Qt.vector3d(endEuler.xVal, endEuler.yVal, endEuler.zVal);
+        startQuat: Qt.quaternion(1,0,0,0)
+        endQuat: Qt.quaternion(1,0,0,0)
+
+        animationTime: animationTime.value
+    }
+
+    Rectangle {
+        id: leftMenu
+        color:"gray"
+        anchors {
+            left: parent.left
+            top: parent.top
+            bottom: parent.bottom
+        }
+        width: 240
+
+        Column {
+            anchors.fill: parent
+
+            Button{
+                text: simulation.running ? "Pause" : "Start"
+                onClicked: simulation.toggleRun()
+            }
+
+            Button{
+                text: "Reset"
+                onClicked: simulation.reset()
+            }
+
+            Text {
+                text: "Animation time"
+            }
+
+            DoubleTextField{
+                id: animationTime
+                minValue: 0
+                maxValue: 600
+                enabled: !simulation.running
+                text: "10.0"
+
+            }
+
+            Text {
+                text: "Animation frames"
+            }
+
+            Text {
+                text: "Positions"
+            }
+            PositionInput {
+                id: startPos
+                text: "Start"
+            }
+            PositionInput {
+                id: endPos
+                text: "End"
+            }
+            Text {
+                text: "EulerAngles"
+            }
+
+            PositionInput {
+                id: startEuler
+                text: "Start"
+            }
+
+            PositionInput {
+                id: endEuler
+                text: "End"
+            }
+
+            Text {
+                text: "Quat - start"
+            }
+        } // ColumnLayout
+    } // Rectangle
+
     Scene3D {
         id: scene3d
-        anchors.fill: parent
+        anchors {
+            left: leftMenu.right
+            top: parent.top
+            bottom: parent.bottom
+            right: parent.right
+        }
         anchors.margins: 0
         focus: true
         aspects: ["input", "logic", "render"]
@@ -51,7 +141,7 @@ ApplicationWindow {
 
                         ClearBuffers {
                             buffers: ClearBuffers.ColorDepthBuffer
-                            clearColor: "gray"
+                            clearColor: "lightgray"
 
                             LayerFilter {
                                 layers: []
@@ -67,77 +157,110 @@ ApplicationWindow {
 
                                 LayerFilter {
                                     layers: [ l1 ]
-                                            }
-                                        }
-                                    }
-
-                                    Viewport {
-                                        id: topRightViewport
-                                        normalizedRect: Qt.rect(0.5, 0, 0.5, 1)
-
-                                        CameraSelector {
-                                            camera: camera
-
-                                            LayerFilter {
-                                                layers: [ l2 ]
-                                            }
-                                        }
-                                    }
-
                                 }
                             }
                         }
 
-                        Layer { id: l1 }
-                        Layer { id: l2 }
+                        Viewport {
+                            id: topRightViewport
+                            normalizedRect: Qt.rect(0.5, 0, 0.5, 1)
 
-                        // Event Source will be set by the Qt3DQuickWindow
-                        InputSettings { id: inputSettings }
-
-                        Entity {
-                            id: cameraSet
-
-                            Camera {
-                                id: camera
-                                projectionType: CameraLens.PerspectiveProjection
-                                fieldOfView: 30
-                                aspectRatio: scene3d.width / 2 / scene3d.height
-                                nearPlane : 0.1
-                                farPlane : 1000.0
-                                position: Qt.vector3d( 1.0, 7.0, 7.0 )
-                                upVector: Qt.vector3d( 0.0, 1.0, 0.0 )
-                                viewCenter: Qt.vector3d( 0.0, 0.0, 0.0 )
-                            }
-
-                            OrbitCameraController {
+                            CameraSelector {
                                 camera: camera
-                                linearSpeed: 10
-                                lookSpeed: 1000
+
+                                LayerFilter {
+                                    layers: [ l2 ]
+                                }
                             }
+                        } //viewport 2
 
-                        }
+                    } // mainViewport
+                } // activeFrameGraph
+            } // frameGraph (renderSettings)
 
-                        PhongAlphaMaterial {
-                            id: gravityMat
-                            ambient: "red"
-                            alpha: 0.9
-                        }
+            Layer { id: l1 }
+            Layer { id: l2 }
 
-                        CuboidMesh {
-                            id: baseMesh
-                            xExtent: 10
-                            yExtent: 0.2
-                            zExtent: 10
-                        }
-                        Entity {
-                            id: sceneRoot
+            InputSettings { id: inputSettings }
 
-                            Entity {
-                                id: base
-                                components: [gravityMat, baseMesh, l1, l2]
-                            } // base
-                            
-                        } // sceneRoot
-                    }// rootNode
-                } // scene3d
+            Entity {
+                id: cameraSet
+
+                Camera {
+                    id: camera
+                    projectionType: CameraLens.PerspectiveProjection
+                    fieldOfView: 30
+                    aspectRatio: scene3d.width / 2 / scene3d.height
+                    nearPlane : 0.1
+                    farPlane : 100.0
+                    position: Qt.vector3d( 0.0, 15.0, 15.0 )
+                    upVector: Qt.vector3d( 0.0, 1.0, 0.0 )
+                    viewCenter: Qt.vector3d( 0.0, 0.0, 0.0 )
+                }
+
+                OrbitCameraController {
+                    camera: camera
+                    linearSpeed: 10
+                    lookSpeed: 1000
+                }
+
+            } // cameraSet
+
+            PhongAlphaMaterial {
+                id: gravityMat
+                ambient: "red"
+                alpha: 0.9
+            }
+
+            CuboidMesh {
+                id: baseMesh
+                xExtent: 10
+                yExtent: 0.2
+                zExtent: 10
+            }
+            Entity {
+                id: sceneRoot
+
+                //Entity {
+                    //id: base
+                    //components: [gravityMat, baseMesh, l1, l2]
+                //} // base
+                Frame {
+                    layers: [l1]
+                    position: simulation.startPos
+                    rotation: Quat.fromEulerAngles(simulation.startEuler)
+                } // euler starting frame
+
+                Frame {
+                    layers: [l1]
+                    position: simulation.endPos
+                    rotation: Quat.fromEulerAngles(simulation.endEuler)
+                } // euler end frame
+
+                Frame {
+                    position: simulation.currentPos
+                    rotation: Quat.fromEulerAngles(simulation.currentEuler)
+                    layers: [l1]
+                }
+
+                Frame {
+                    layers: [l2]
+                    position: simulation.startPos
+                    rotation: simulation.startQuat
+                } // quaternion starting frame
+
+                Frame {
+                    layers: [l2]
+                    position: simulation.endPos
+                    rotation: simulation.endQuat
+                } // quaternion end frame
+
+                Frame {
+                    layers: [l2]
+                    position: simulation.currentPos
+                    rotation: simulation.currentQuat
+                }
+            } // sceneRoot
+        }// rootNode
+    } // scene3d
 }

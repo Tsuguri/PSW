@@ -2,5 +2,7 @@
     <qresource prefix="/">
         <file>main.qml</file>
         <file>DoubleTextField.qml</file>
+        <file>PositionInput.qml</file>
+	<file>Frame.qml</file>
     </qresource>
 </RCC>
