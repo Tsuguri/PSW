@@ -10,7 +10,7 @@ Entity {
 
     CylinderMesh {
         id: mesh
-        radius: 0.1
+        radius: 0.05
         length: 1.0
     }
     PhongMaterial {

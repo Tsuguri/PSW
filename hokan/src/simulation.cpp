@@ -1,6 +1,7 @@
 #include "simulation.hpp"
 
 #include <iostream>
+#include <cmath>
 
 #include "QQuaternionUtils.hpp"
 
@@ -141,7 +142,7 @@ void Simulation::tick() {
 float interpolateAngle(float from, float to, float at){
     auto div = to-from;
     if(std::abs(div)>180){
-        div = 180-div;
+        div = div-(div>0 ? 1 : -1)*360;
     }
 
     auto change = div*at;
@@ -165,13 +166,37 @@ QVector3D interpolateEuler(double at, const QVector3D& from, const QVector3D to)
     return QVector3D(x,y,z);
 }
 
-QQuaternion lerp(double at, const QQuaternion& from, const QQuaternion& to){
-    return (from*(1-at) + to*at).normalized();
+float dot(const QQuaternion& q1, const QQuaternion& q2) {
+    return q1.x()*q2.x() + q1.y()*q2.y() + q1.z()*q2.z() + q1.scalar()*q2.scalar();
 }
 
-QQuaternion slerp(double at, const QQuaternion& from, const QQuaternion& to){
-    // TODO: implement
-    return lerp(at, from, to);
+QQuaternion lerp(double at, const QQuaternion& from, const QQuaternion& to){
+    auto to2 = to;
+    if (dot(from, to)<0){
+        to2 = -to;
+    }
+    return (from*(1-at) + to2*at).normalized();
+}
+
+QQuaternion slerpo(double at, const QQuaternion& from, const QQuaternion& to){
+    auto to2 = to;
+    auto dotto = dot(from, to);
+    if (dotto<0){
+        to2 = -to;
+        dotto = -dotto;
+    }
+    if(dotto>0.999995) {
+        return lerp(at,from,to);
+    }
+    auto theta0 = std::acos(dotto);
+    auto theta = at*theta0;
+    auto sinTheta = std::sin(theta);
+    auto sinTheta0 = std::sin(theta0);
+
+    auto s0 = cos(theta) - dotto * sinTheta /sinTheta0;
+    auto s1 = sinTheta / sinTheta0;
+
+    return (s0*from + s1*to2).normalized();
 }
 
 void Simulation::computeCurrentData(){
@@ -180,7 +205,11 @@ void Simulation::computeCurrentData(){
     double mat = 1-at;
 
     currentEuler = interpolateEuler(at, startEuler, endEuler);
-    currentQuat = lerp(at, startQuat, endQuat);
+    if(slerp) {
+        currentQuat = slerpo(at, startQuat, endQuat);
+    } else {
+        currentQuat = lerp(at, startQuat, endQuat);
+    }
     currentPos = startPos*mat + endPos * at;
     //std::cout<<"Start pos set to: "<<startPos.x()<<" "<<startPos.y()<<" "<<startPos.z()<<std::endl;
     //std::cout<<"End pos set to: "<<endPos.x()<<" "<<endPos.y()<<" "<<endPos.z()<<std::endl;
