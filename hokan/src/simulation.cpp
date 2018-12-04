@@ -92,14 +92,14 @@ void Simulation::setEndEuler(const QVector3D& val) {
 }
 
 void Simulation::setStartQuat(const QQuaternion& quat) {
-    startQuat = quat;
+    startQuat = quat.normalized();
     startEuler = startQuat.toEulerAngles();
     emit startQuatChanged();
     emit startEulerChanged();
 }
 
 void Simulation::setEndQuat(const QQuaternion& quat) {
-    endQuat = quat;
+    endQuat = quat.normalized();
     endEuler = endQuat.toEulerAngles();
     emit endQuatChanged();
     emit endEulerChanged();
@@ -201,7 +201,6 @@ QQuaternion slerpo(double at, const QQuaternion& from, const QQuaternion& to){
 
 void Simulation::computeCurrentData(){
     double at = time/animationTime;
-    std::cout<<"at: "<<at<<std::endl;
     double mat = 1-at;
 
     currentEuler = interpolateEuler(at, startEuler, endEuler);
@@ -211,9 +210,6 @@ void Simulation::computeCurrentData(){
         currentQuat = lerp(at, startQuat, endQuat);
     }
     currentPos = startPos*mat + endPos * at;
-    //std::cout<<"Start pos set to: "<<startPos.x()<<" "<<startPos.y()<<" "<<startPos.z()<<std::endl;
-    //std::cout<<"End pos set to: "<<endPos.x()<<" "<<endPos.y()<<" "<<endPos.z()<<std::endl;
-    //std::cout<<"current pos: "<<currentPos.x()<<" "<<currentPos.y()<<" "<<currentPos.z()<<std::endl;
 
     emit currentStateChanged();
 }

@@ -34,13 +34,18 @@ ApplicationWindow {
         startPos: startPos.value//Qt.vector3d(startPos.xVal, startPos.yVal, startPos.zVal)
         endPos: endPos.value//Qt.vector3d(endPos.xVal, endPos.yVal, endPos.zVal)
         startEuler: startEuler.value//Qt.vector3d(startEuler.xVal, startEuler.yVal, startEuler.zVal);
+        //startEuler.x: startEuler.xVal
+        //startEuler.y: startEuler.yVal
+        //startEuler.z: startEuler.zVal
         endEuler: endEuler.value//Qt.vector3d(endEuler.xVal, endEuler.yVal, endEuler.zVal);
-        startQuat: Qt.quaternion(1,0,0,0)
-        endQuat: Qt.quaternion(1,0,0,0)
+        startQuat: startQuat.value
+
+        endQuat: endQuat.value
         slerp: slerp.checked
 
         animationTime: animationTime.value
     }
+
 
     Rectangle {
         id: leftMenu
@@ -50,7 +55,7 @@ ApplicationWindow {
             top: parent.top
             bottom: parent.bottom
         }
-        width: 240
+        width: 270
 
         Column {
             anchors.fill: parent
@@ -91,7 +96,7 @@ ApplicationWindow {
             }
             PositionInput {
                 id: endPos
-                text: "End"
+                text: "End  "
             }
             Text {
                 text: "EulerAngles"
@@ -104,11 +109,19 @@ ApplicationWindow {
 
             PositionInput {
                 id: endEuler
-                text: "End"
+                text: "End  "
             }
 
             Text {
-                text: "Quat - start"
+                text: "Quat"
+            }
+            QuaternionInput {
+                text: "Start"
+                id: startQuat
+            }
+            QuaternionInput {
+                text: "End  "
+                id: endQuat
             }
             CheckBox{
                 id: slerp

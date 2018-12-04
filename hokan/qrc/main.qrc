@@ -3,6 +3,7 @@
         <file>main.qml</file>
         <file>DoubleTextField.qml</file>
         <file>PositionInput.qml</file>
+	<file>QuaternionInput.qml</file>
 	<file>Frame.qml</file>
     </qresource>
 </RCC>
