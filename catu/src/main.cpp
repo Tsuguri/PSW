@@ -10,7 +10,7 @@
 
 int main(int argc, char **argv) {
   QApplication app(argc, argv);
-
+QCoreApplication::setOrganizationName("QtExamples");
   QQmlApplicationEngine engine;
 
   qmlRegisterType<Material>("Catu", 1, 0, "Material");

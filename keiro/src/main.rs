@@ -30,7 +30,7 @@ use Data::deser;
 //use glium::framebuffer::ToDepthAttachment;
 use Utils::{LoadTexture, LoadFileContent, SaveTextureToFile};
 
-use Paths::{generate_rough, generate_flat};
+use Paths::{generate_rough, generate_flat, generate_contour};
 
 
 fn SceneToBsplines(scene: &Data::Scene, display: &glium::backend::Facade) -> Vec<Box<BezierPatch>> {
@@ -208,6 +208,13 @@ fn render<S>(target: &mut S, d: &RenderingData, viewMat: &Matrix4<f32>, perspect
     }
 
     target.draw(d.ground.GetVertices(), d.ground.GetIndices(), &d.groundProgram, &uniform!{mat:mat.Content()}, &d.surfaceParams).unwrap();
+
+    match &d.l2 {
+        None => (),
+        Some(l) => {
+            target.draw(l.GetVertices(), l.GetIndices(), &d.contLinesProgram, &uniform!{mat:mat.Content(), t:d.t, tool: 0.01f32}, &d.surfaceParams).unwrap();
+        }
+    }
 }
 
 
@@ -218,7 +225,7 @@ fn points_to_file(pts: &Vec<Vector3<f32>>, path: &str){
     //
     let mut file = File::create(path).unwrap();
     for pt in pts.iter().enumerate() {
-        write!(&mut file, "N{}X{:.3}Y{:.3}Z{:.3}\n", pt.0+1, pt.1.x()*10.0, pt.1.y()*10.0, pt.1.z()*10.0);
+        write!(&mut file, "N{}G01X{:.3}Y{:.3}Z{:.3}\n", pt.0+1, pt.1.x()*10.0, pt.1.y()*10.0, pt.1.z()*10.0);
     }
 
     drop(file);
@@ -229,6 +236,7 @@ struct RenderingData<'a> {
     camera: Camera,
     surfaces: Vec<Box<BezierPatch>>,
     lines: Vec<Model<PositionVertex>>,
+    l2: Option<Model<PositionVertex>>,
     ground: Model<PositionVertex>,
     groundProgram: glium::Program,
     surfaceParams: glium::DrawParameters<'a>,
@@ -341,6 +349,7 @@ fn main()
 	    camera :Camera::new(-45.0, 30.0, Vector3::new(0.0, 0.0, 0.0), 3.0,  3.14/5.0, 0.1, 50.0, 3.0/4.0),
         diffuseTexture,
         lines,
+        l2: Option::None,
         ground,
         groundProgram,
         surfaces: bspline,
@@ -404,12 +413,12 @@ fn main()
            //let pixels : Vec<(u8, u8, u8, u8)> = depth.read();
            //let data :i32 = pixels.read().unwrap();
            println!("reading data");
-  //         let data = depth.read();
+           let data = depth.read();
 
            println!("genrating rough paths");
- //          let roughPath = generate_rough(-7.5, 7.5, -7.5, 7.5, 2.0, 5.0, 0.8, (-10.0, -10.0, 5.0), data);
+           let roughPath = generate_rough(-7.5, 7.5, -7.5, 7.5, 2.0, 5.0, 0.8, (-10.0, -10.0, 5.0), data);
 
-//           points_to_file(&roughPath, "/home/adam/paths/r1.k16");
+           points_to_file(&roughPath, "/home/adam/paths/r1.k16");
 
             let ground2 = groundRect(&display, 10.0f32, 0.0);
             drawParams.ground = ground2;
@@ -431,9 +440,18 @@ fn main()
 
             points_to_file(&flat, "/home/adam/paths/r2.f12");
 
+            drawParams.toolRadius = -0.5;
+            render(&mut fb, &drawParams, &viewMat, &perspectiveMat);
+            fb2.draw(rect2.GetVertices(), rect2.GetIndices(), &rectProgram, &uniform!(texSampler: depthBuf.sampled()), &glium::DrawParameters{..Default::default()}).unwrap();
+            let flat_contour = generate_contour(-7.5, 7.5, -7.5, 7.5, 2.0, 5.0, 0.5, (-10.0, -10.0, 5.0), depth.read());
+
+            drawParams.l2 = Option::Some(LineFromPoints( flat_contour.iter(), &display));
+            points_to_file(&flat_contour, "/home/adam/paths/r3.f10");
+
+            //SaveTextureToFile(depth.read(), "/home/adam/depth.png");
+
 
             //println!("saving");
-            //SaveTextureToFile(depth.read(), "/home/adam/depth.png");
             println!("done");
         }
 		let mut target = display.draw();

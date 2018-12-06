@@ -62,13 +62,11 @@ QQuaternion Simulation::getEndQuat() const {
 }
 
 void Simulation::setSlerp(bool val){
-    std::cout<<"slerp set to: "<<val<<std::endl;
     slerp = val;
 }
 
 void Simulation::setStartPos(const QVector3D& val) {
     startPos=val;
-    std::cout<<"Start pos set to: "<<currentPos.x()<<" "<<currentPos.y()<<" "<<currentPos.z()<<std::endl;
     emit startPosChanged();
 }
 
@@ -140,6 +138,12 @@ void Simulation::tick() {
 }
 
 float interpolateAngle(float from, float to, float at){
+    while(from > 360) {
+        from -=360;
+    }
+    while(to> 360) {
+        to-=360;
+    }
     auto div = to-from;
     if(std::abs(div)>180){
         div = div-(div>0 ? 1 : -1)*360;
