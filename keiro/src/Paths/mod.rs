@@ -174,16 +174,25 @@ pub fn generate_details(
 
     let mut result = vec![];
 
-    for u in 0..100 {
-        for v in 0..100 {
-            let p = gatling.evaluate(
-                (gatling.u * u) as f32 / 100.0f32,
-                (gatling.v * v) as f32 / 100.0f32,
-            );
-            result.push(p);
+    for u in 48..92 {
+        let rev = u%2==0;
+        for v in 1..100 {
+            let val = if rev { 100-v} else {v};
+            let q = wings.eval_dist(
+                (wings.u*u) as f32 / 100.0f32,
+                (wings.v*val) as f32 / 100.0f32, toolRadius);
+            result.push(q);
         }
     }
+    println!("floor offset: {}",floorOffset);
 
+    for elem in &mut result {
+            let tmp = *elem;
+
+            *elem = Vector3::new(tmp.x(), tmp.z(), f32::max(floorOffset + tmp.y()-toolRadius, floorOffset));
+            if elem.z() < 0.0{
+            }
+    }
     result
 }
 

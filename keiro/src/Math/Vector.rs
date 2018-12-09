@@ -1,4 +1,4 @@
-use std::ops::{Add, Index, IndexMut, Mul};
+use std::ops::{Add, Index, IndexMut, Mul, Sub, Div};
 
 use super::Matrix::Matrix4;
 
@@ -106,17 +106,31 @@ where
     }
 }
 
+
+pub trait VecElem : Copy + Add<Output=Self> + Mul<Output=Self> + Sub<Output=Self> + Div<Output=Self> + Default {
+}
+
+impl<T: Copy + Add<Output=T> + Mul<Output=T> + Sub<Output=T> + Div<Output=T> + Default> VecElem for T{}
+
 #[derive(Copy, Clone, Debug)]
 pub struct Vector3<T>
 where
-    T: Copy + Add<Output = T> + Mul<Output = T>,
+    T: VecElem
 {
     content: [T; 3],
 }
 
+impl Vector3<f32> {
+    pub fn normalized(&self) -> Self {
+        let len = (self.x()*self.x() + self.y() * self.y() + self.z() * self.z()).sqrt();
+
+        return Self::new(self.x()/len, self.y()/len, self.z()/len);
+    }
+}
+
 impl<T> Vector3<T>
 where
-    T: Copy + Add<Output = T> + Mul<Output = T> + Default,
+    T: VecElem
 {
     pub fn Sum(&self) -> T {
         self.content[0] + self.content[1] + self.content[2]
@@ -151,11 +165,16 @@ where
     pub fn Content(&self) -> [T; 3] {
         self.content
     }
+
+    pub fn cross(v1: &Self, v2: &Self) -> Self {
+        Self::new(v1.y()*v2.z() - v1.z()*v2.y(), v1.z()*v2.x() - v1.x()*v2.z(), v1.x()*v2.y() - v1.y()*v2.x())
+    }
+
 }
 
 impl<T> Mul<Vector3<T>> for Vector3<T>
 where
-    T: Copy + Add<Output = T> + Mul<Output = T> + Default,
+    T: VecElem
 {
     type Output = Vector3<T>;
     fn mul(self, rhs: Vector3<T>) -> Vector3<T> {
@@ -169,7 +188,7 @@ where
 
 impl<T> Mul<T> for Vector3<T>
 where
-    T: Copy + Add<Output = T> + Mul<Output = T> + Default,
+    T: VecElem
 {
     type Output = Vector3<T>;
     fn mul(self, rhs: T) -> Vector3<T> {
@@ -183,7 +202,7 @@ where
 
 impl<T> Add for Vector3<T>
 where
-    T: Copy + Add<Output = T> + Mul<Output = T> + Default,
+    T: VecElem
 {
     type Output = Vector3<T>;
     fn add(self, rhs: Vector3<T>) -> Vector3<T> {
@@ -191,6 +210,20 @@ where
             self.content[0] + rhs.content[0],
             self.content[1] + rhs.content[1],
             self.content[2] + rhs.content[2],
+        )
+    }
+}
+
+impl<T> Sub for Vector3<T>
+where
+    T: VecElem
+{
+    type Output = Vector3<T>;
+    fn sub(self, rhs: Vector3<T>) -> Vector3<T> {
+       Vector3::new( 
+            self.content[0] - rhs.content[0],
+            self.content[1] - rhs.content[1],
+            self.content[2] - rhs.content[2],
         )
     }
 }

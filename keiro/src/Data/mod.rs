@@ -197,11 +197,14 @@ pub fn deser(path: &str) -> Scene {
         }
         Err(err) => {
             println!("{:?}", err);
-            /*match err {
-                ParseIntError(err2) => {
-                    println!("{}"
-                }
-            }*/
+            match err {
+                serde_xml_rs::Error::Syntax(what) => println!("{:?}", what),
+                serde_xml_rs::Error::ParseIntError(what) => println!("{:?}", what),
+                serde_xml_rs::Error::Custom(what) => println!("custom, {:?}", what),
+                serde_xml_rs::Error::Io(what) => println!("io, {:?}", what),
+                serde_xml_rs::Error::UnsupportedOperation(what) => println!("uo, {:?}", what),
+                _=>println!("wut")
+            }
             panic!();
         }
     }
@@ -251,6 +254,44 @@ var n = new Vector4 { [0] = 1.0 };
         return vec;
     }
 
+    pub fn du(&self, u: f32, v: f32) -> Vector3<f32> {
+        let ud = Self::eval_bspline(u, 2);
+        let vd = Self::eval_bspline(v, 3);
+        let fs = Vector4::matrix_multiply(ud, vd);
+
+        let mut result = Vector3::empty();
+        for i in 0..3 {
+            for j in 0..4 {
+                let increase = (self.points[i+1][j] - self.points[i][j]) * fs[(i,j)];
+                result = result + increase;
+            }
+        }
+        result
+    }
+
+    pub fn dv(&self, u: f32, v: f32) -> Vector3<f32> {
+        let ud = Self::eval_bspline(u, 3);
+        let vd = Self::eval_bspline(v, 2);
+        let fs = Vector4::matrix_multiply(ud, vd);
+
+        let mut result = Vector3::empty();
+        for i in 0..4 {
+            for j in 0..3 {
+                let increase = (self.points[i][j+1] - self.points[i][j]) * fs[(i,j)];
+                result = result + increase;
+            }
+        }
+        result
+
+    }
+
+    pub fn normal(&self, u: f32, v: f32) -> Vector3<f32> {
+        let v1 = self.du(u,v);
+        let v2 = self.dv(u,v);
+
+        Vector3::cross(&v1, &v2).normalized()
+    }
+
     pub fn evaluate(&self, u: f32, v: f32) -> Vector3<f32> {
         //println!("evaluating at: {}, {}", u, v);
         let fu = Self::eval_bspline(u, 3);
@@ -286,6 +327,18 @@ impl Surface {
         let du = u.fract();
         let dv = v.fract();
         self.patches[pu * self.v as usize + pv].evaluate(du, dv)
+    }
+
+    pub fn eval_dist(&self, u: f32, v:f32, dist: f32) -> Vector3<f32> {
+        let pu = u.trunc() as usize;
+        let pv = v.trunc() as usize;
+        let du = u.fract();
+        let dv = v.fract();
+        let pt = self.patches[pu * self.v as usize + pv].evaluate(du, dv);
+        let normal = self.patches[pu*self.v as usize + pv].normal(du,dv);
+        //println!("{:?}", normal);
+        return pt + normal*dist;
+
     }
 }
 

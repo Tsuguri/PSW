@@ -354,7 +354,7 @@ fn main() {
     let groundVert = LoadFileContent(&String::from("res/Shaders/ground.vert"));
     let groundFrag = LoadFileContent(&String::from("res/Shaders/ground.frag"));
 
-    let sceneData = deser("res/model.xml");
+    let sceneData = deser("res/model2.xml");
 
     let bspline = SceneToBsplines(&sceneData, &display);
     let rect2 = rect(&display, 1.0f32);
