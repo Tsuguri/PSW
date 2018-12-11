@@ -593,6 +593,7 @@ fn main() {
             //drawParams.l2 = Option::Some(LineFromPoints( flat_contour.iter(), &display));
             points_to_file(&flat_contour, "/home/adam/paths/r3.f10");
 
+            /*
             drawParams.toolRadius = -0.4;
             drawParams.ground = groundRect(&display, 7.9f32, -drawParams.toolRadius);
 
@@ -622,6 +623,7 @@ fn main() {
             points_to_file(&details, "/home/adam/paths/r4.k8");
             println!("generated {} points", details.len());
             drawParams.l2 = Option::Some(LineFromPoints(details.iter(), &display));
+            */
             //SaveTextureToFile(depth.read(), "/home/adam/depth.png");
 
             //println!("saving");

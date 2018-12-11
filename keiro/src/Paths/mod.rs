@@ -231,14 +231,14 @@ pub fn generate_contour(
 
     result.push(Vector3::new(start.0, start.1, start.2));
 
-    let mut x: i32 = 25;
+    let mut x: i32 = 35;
     let mut y: i32 = (height as f32 * 0.9) as i32;
 
     result.push(Vector3::new(xToWorld(x), yToWorld(y), materialHeight + 0.1));
     result.push(Vector3::new(xToWorld(x), yToWorld(y), floorOffset));
 
     let mut up = false;
-    let step = 1845;
+    let step = 1835;
     move_tool(
         &mut result,
         x,
@@ -337,7 +337,7 @@ pub fn generate_contour(
     );
     x -= step as i32;
 
-    let step = 860;
+    let step = 750;
     up = true;
     move_tool(
         &mut result,
@@ -357,7 +357,7 @@ pub fn generate_contour(
     );
     y += step as i32;
 
-    let step = 200;
+    let step = 460;
     up = true;
     move_tool(
         &mut result,
@@ -456,8 +456,8 @@ pub fn generate_flat(
     for i in 0..(rows + 1) {
         move_tool(
             &mut result,
-            (i * step) as i32,
-            prev * (step as i32),
+            (i * step+5) as i32,
+            prev * (step as i32)+5,
             &mut y,
             h,
             &g,
@@ -476,8 +476,8 @@ pub fn generate_flat(
     for i in (0..rows).rev() {
         move_tool(
             &mut result,
-            (i * step) as i32,
-            prev * (step as i32),
+            (i * step+5) as i32,
+            prev * (step as i32)+5,
             &mut y,
             h,
             &g,
