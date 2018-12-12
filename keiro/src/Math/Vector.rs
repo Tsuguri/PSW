@@ -51,6 +51,16 @@ where
     }
 }
 
+impl<T> Index<usize> for Vector2<T>
+where
+    T: VecElem,
+{
+    type Output = T;
+
+    fn index<'a>(&self, index: usize) -> &T {
+        &self.content[index]
+    }
+}
 impl<T> IndexMut<usize> for Vector4<T>
 where
     T: Copy + Add<Output = T> + Mul<Output = T>,
@@ -111,6 +121,21 @@ pub trait VecElem : Copy + Add<Output=Self> + Mul<Output=Self> + Sub<Output=Self
 }
 
 impl<T: Copy + Add<Output=T> + Mul<Output=T> + Sub<Output=T> + Div<Output=T> + Default> VecElem for T{}
+
+
+pub struct Vector2<T>
+where T: VecElem
+{
+    content: [T;2],
+}
+
+impl<T> Vector2<T> where T: VecElem {
+    pub fn new(x: T, y:T) -> Self {
+        Vector2{content: [x,y]}
+    }
+
+}
+
 
 #[derive(Copy, Clone, Debug)]
 pub struct Vector3<T>

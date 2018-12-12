@@ -356,6 +356,8 @@ fn main() {
 
     let sceneData = deser("res/model2.xml");
 
+    println!("cutting curves: {}", sceneData.curves.len());
+
     let bspline = SceneToBsplines(&sceneData, &display);
     let rect2 = rect(&display, 1.0f32);
 
@@ -490,11 +492,11 @@ fn main() {
             //SaveTextureToFile(display.read_front_buffer(), "/home/adam/tmp.png");
 
             println!("rendering");
-
             let viewMat = Matrix4::Translation(0.0, 0.0, 5.0) * Matrix4::RotationX(-3.14 / 2.0);
             let viewMat = viewMat.Transposed();
             //let perspectiveMat = drawParams.camera.GetProjectionMatrix().Transposed();
             let perspectiveMat = Matrix4::<f32>::Ortho(-7.5f32, 7.5, -7.5, 7.5).Transposed();
+/*
             drawParams.toolRadius = -0.9;
             drawParams.ground = groundRect(&display, 7.9f32, 0.9);
             render(&mut fb, &drawParams, &viewMat, &perspectiveMat);
@@ -592,8 +594,8 @@ fn main() {
 
             //drawParams.l2 = Option::Some(LineFromPoints( flat_contour.iter(), &display));
             points_to_file(&flat_contour, "/home/adam/paths/r3.f10");
-
-            /*
+*/
+            
             drawParams.toolRadius = -0.4;
             drawParams.ground = groundRect(&display, 7.9f32, -drawParams.toolRadius);
 
@@ -623,7 +625,7 @@ fn main() {
             points_to_file(&details, "/home/adam/paths/r4.k8");
             println!("generated {} points", details.len());
             drawParams.l2 = Option::Some(LineFromPoints(details.iter(), &display));
-            */
+
             //SaveTextureToFile(depth.read(), "/home/adam/depth.png");
 
             //println!("saving");

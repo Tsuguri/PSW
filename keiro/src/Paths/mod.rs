@@ -1,5 +1,6 @@
 use Data;
 use Math::Vector::Vector3;
+use Math::Vector::Vector2;
 
 fn move_tool(
     result: &mut Vec<Vector3<f32>>,
@@ -127,6 +128,60 @@ fn move_tool(
     );
 }
 
+fn generate_bool_map(width: i32, height: i32, result: &mut [bool], u: u32, v: u32, path: &[Vector2<f32>], inv: bool) {
+
+
+}
+
+fn generate_height_map(result: &mut [bool], u: i32, v: i32, surface: &Data::Surface, toolRadius: f32) {
+    for up in 0..u {
+        for vp in 0..v {
+
+            let uc =(surface.u as i32*up) as f32 / (u as f32); 
+            let vc = (surface.v as i32*vp) as f32 / (v as f32);
+            let q = surface.eval_dist(uc, vc, toolRadius);
+            if q.y()<toolRadius {
+                result[(up*v+vp) as usize] = false;
+            }
+        }
+    }
+}
+
+fn generate_gatling_details(gatling: &Data::Surface, gatling_wing: &[Vector2<f32>], toolRadius: f32) -> Vec<Vector3<f32>> {
+
+    let uRes :i32 = 130;
+    let vRes  :i32= 180;
+
+    let mut map = vec![true; (uRes*vRes) as usize];
+
+
+    generate_height_map(&mut map, uRes, vRes, gatling, toolRadius);
+    generate_bool_map(uRes, vRes, &mut map, gatling.u, gatling.v, gatling_wing, false);
+    let value = |up: i32,vp:i32| {
+        map[(up*vRes+vp) as usize]
+    };
+    let mut result = vec![];
+
+    for u in 0..uRes {
+        let rev = u%2==0;
+        for v in 1..vRes {
+            let val = if rev { vRes-v} else {v};
+            if !value(u,val) {
+                continue;
+            }
+            let uc =(gatling.u as i32*u) as f32 / (uRes as f32); 
+            let vc = (gatling.v as i32*val) as f32 / (vRes as f32);
+            let q = gatling.eval_dist(
+                uc,vc
+                , toolRadius);
+            result.push(q);
+        }
+    }
+    result
+
+    //gatling_wing.iter().map(|x| gatling.eval_dist(x[0], x[1], toolRadius)).collect()
+}
+
 pub fn generate_details(
     l: f32,
     r: f32,
@@ -137,16 +192,16 @@ pub fn generate_details(
     toolRadius: f32,
     start: (f32, f32, f32),
     map: glium::texture::RawImage2d<u8>,
-    data: &Data::Scene,
+    d: &Data::Scene,
 ) -> Vec<Vector3<f32>> {
     // 0 -> gatling
     // 1 -> body
     // 2 -> cockpit
     // 3 -> wings
-    let gatling = &data.surfaces[0];
-    let body = &data.surfaces[1];
-    let cockpit = &data.surfaces[2];
-    let wings = &data.surfaces[3];
+    let gatling = &d.surfaces[0];
+    let body = &d.surfaces[1];
+    let cockpit = &d.surfaces[2];
+    let wings = &d.surfaces[3];
 
     let width = map.width as i32;
     let height = map.height as i32;
@@ -174,22 +229,30 @@ pub fn generate_details(
 
     let mut result = vec![];
 
-    for u in 48..92 {
+    /*for u in 0..50 {
         let rev = u%2==0;
-        for v in 1..100 {
-            let val = if rev { 100-v} else {v};
-            let q = wings.eval_dist(
-                (wings.u*u) as f32 / 100.0f32,
-                (wings.v*val) as f32 / 100.0f32, toolRadius);
+        let mk = 50;
+        for v in 1..mk {
+            let val = if rev { mk-v} else {v};
+            let q = gatling.eval_dist(
+                (gatling.u*u) as f32 / 100.0f32,
+                (gatling.v*val) as f32 / 100.0f32, toolRadius);
             result.push(q);
         }
-    }
-    println!("floor offset: {}",floorOffset);
+    }*/
+    //for pt in &d.curves[1] {
+        //result.push(wings.eval_dist(pt[0],pt[1], toolRadius));
+
+    //}
+    //
+    result.extend(generate_gatling_details(gatling, &d.curves[0], toolRadius));
+
 
     for elem in &mut result {
             let tmp = *elem;
 
-            *elem = Vector3::new(tmp.x(), tmp.z(), f32::max(floorOffset + tmp.y()-toolRadius, floorOffset));
+            //*elem = Vector3::new(tmp.x(), tmp.z(), f32::max(floorOffset - tmp.y()- toolRadius, floorOffset));
+            *elem = Vector3::new(tmp.x(), tmp.y()+4.0, tmp.z());
             if elem.z() < 0.0{
             }
     }

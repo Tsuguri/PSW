@@ -2,6 +2,7 @@ use serde::{Deserialize, Deserializer};
 use serde_xml_rs::deserialize;
 use std::error::Error;
 
+use Math::Vector::Vector2;
 use Math::Vector::Vector3;
 use Math::Vector::Vector4;
 
@@ -34,6 +35,18 @@ impl Vec3 {
     pub fn to_vector(&self) -> Vector3<f32> {
         Vector3::new(self.x, self.y, self.z)
     }
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+struct Vec4 {
+    #[serde(rename = "X", deserialize_with = "str_to_float")]
+    pub x: f32,
+    #[serde(rename = "Y", deserialize_with = "str_to_float")]
+    pub y: f32,
+    #[serde(rename = "Z", deserialize_with = "str_to_float")]
+    pub z: f32,
+    #[serde(rename = "W", deserialize_with = "str_to_float")]
+    pub w: f32,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -97,6 +110,22 @@ struct InternalPatch {
     #[serde(rename = "Points")]
     uvs: Uvs,
 }
+
+
+#[derive(Serialize, Deserialize, Debug)]
+struct InternalPoints {
+    #[serde(rename = "Vector4")]
+    points: Vec<Vec4>,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+struct InternalCurve {
+    #[serde(rename = "Name")]
+    name: String,
+    #[serde(rename = "Points")]
+    points: InternalPoints
+}
+
 
 #[derive(Serialize, Deserialize, Debug)]
 struct InternalSurface {
@@ -164,6 +193,13 @@ struct Surfaces {
     surfaces: Vec<InternalSurface>,
 }
 
+
+#[derive(Serialize, Deserialize, Debug)]
+struct Curves {
+    #[serde(rename = "CuttingCurve")]
+    curves: Vec<InternalCurve>,
+}
+
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename = "Scene")]
 struct InternalScene {
@@ -171,15 +207,32 @@ struct InternalScene {
     points: Pts,
     #[serde(rename = "BezierSurfacesC2")]
     surfaces: Surfaces,
+    #[serde(rename = "CuttingCurves")]
+    curves: Curves
 }
 
 fn TransformScene(scene: &InternalScene) -> Scene {
     let mut surfaces = vec![];
+    let mut curves = vec![];
     println!("start");
     for p in &scene.surfaces.surfaces {
         surfaces.push(TransformSurface(p, &scene.points));
     }
-    Scene { surfaces }
+    for p in &scene.curves.curves{
+        let mut c1 = vec![];
+        let mut c2 = vec![];
+        println!("transforming {}", p.name);
+
+        for pp in &p.points.points {
+            c1.push(Vector2::new(pp.x, pp.y));
+            c2.push(Vector2::new(pp.z, pp.w));
+        }
+
+        curves.push(c1);
+        curves.push(c2);
+
+    }
+    Scene { surfaces, curves }
 }
 
 pub fn deser(path: &str) -> Scene {
@@ -344,4 +397,5 @@ impl Surface {
 
 pub struct Scene {
     pub surfaces: Vec<Surface>,
+    pub curves: Vec<Vec<Vector2<f32>>>,
 }
