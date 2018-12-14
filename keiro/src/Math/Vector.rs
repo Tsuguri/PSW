@@ -187,6 +187,10 @@ where
         self.content[2]
     }
 
+    pub fn len_squared(&self) -> T {
+        self.content[0]*self.content[0] + self.content[1]*self.content[1] + self.content[2]*self.content[2]
+    }
+
     pub fn Content(&self) -> [T; 3] {
         self.content
     }
