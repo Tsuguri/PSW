@@ -111,7 +111,6 @@ struct InternalPatch {
     uvs: Uvs,
 }
 
-
 #[derive(Serialize, Deserialize, Debug)]
 struct InternalPoints {
     #[serde(rename = "Vector4")]
@@ -123,9 +122,8 @@ struct InternalCurve {
     #[serde(rename = "Name")]
     name: String,
     #[serde(rename = "Points")]
-    points: InternalPoints
+    points: InternalPoints,
 }
-
 
 #[derive(Serialize, Deserialize, Debug)]
 struct InternalSurface {
@@ -193,7 +191,6 @@ struct Surfaces {
     surfaces: Vec<InternalSurface>,
 }
 
-
 #[derive(Serialize, Deserialize, Debug)]
 struct Curves {
     #[serde(rename = "CuttingCurve")]
@@ -208,7 +205,7 @@ struct InternalScene {
     #[serde(rename = "BezierSurfacesC2")]
     surfaces: Surfaces,
     #[serde(rename = "CuttingCurves")]
-    curves: Curves
+    curves: Curves,
 }
 
 fn TransformScene(scene: &InternalScene) -> Scene {
@@ -218,7 +215,7 @@ fn TransformScene(scene: &InternalScene) -> Scene {
     for p in &scene.surfaces.surfaces {
         surfaces.push(TransformSurface(p, &scene.points));
     }
-    for p in &scene.curves.curves{
+    for p in &scene.curves.curves {
         let mut c1 = vec![];
         let mut c2 = vec![];
         println!("transforming {}", p.name);
@@ -230,7 +227,6 @@ fn TransformScene(scene: &InternalScene) -> Scene {
 
         curves.push(c1);
         curves.push(c2);
-
     }
     Scene { surfaces, curves }
 }
@@ -256,7 +252,7 @@ pub fn deser(path: &str) -> Scene {
                 serde_xml_rs::Error::Custom(what) => println!("custom, {:?}", what),
                 serde_xml_rs::Error::Io(what) => println!("io, {:?}", what),
                 serde_xml_rs::Error::UnsupportedOperation(what) => println!("uo, {:?}", what),
-                _=>println!("wut")
+                _ => println!("wut"),
             }
             panic!();
         }
@@ -315,7 +311,7 @@ var n = new Vector4 { [0] = 1.0 };
         let mut result = Vector3::empty();
         for i in 0..3 {
             for j in 0..4 {
-                let increase = (self.points[i+1][j] - self.points[i][j]) * fs[(i,j)];
+                let increase = (self.points[i + 1][j] - self.points[i][j]) * fs[(i, j)];
                 result = result + increase;
             }
         }
@@ -330,17 +326,16 @@ var n = new Vector4 { [0] = 1.0 };
         let mut result = Vector3::empty();
         for i in 0..4 {
             for j in 0..3 {
-                let increase = (self.points[i][j+1] - self.points[i][j]) * fs[(i,j)];
+                let increase = (self.points[i][j + 1] - self.points[i][j]) * fs[(i, j)];
                 result = result + increase;
             }
         }
         result
-
     }
 
     pub fn normal(&self, u: f32, v: f32) -> Vector3<f32> {
-        let v1 = self.du(u,v);
-        let v2 = self.dv(u,v);
+        let v1 = self.du(u, v);
+        let v2 = self.dv(u, v);
 
         Vector3::cross(&v1, &v2).normalized()
     }
@@ -382,16 +377,15 @@ impl Surface {
         self.patches[pu * self.v as usize + pv].evaluate(du, dv)
     }
 
-    pub fn eval_dist(&self, u: f32, v:f32, dist: f32) -> Vector3<f32> {
+    pub fn eval_dist(&self, u: f32, v: f32, dist: f32) -> Vector3<f32> {
         let pu = u.trunc() as usize;
         let pv = v.trunc() as usize;
         let du = u.fract();
         let dv = v.fract();
         let pt = self.patches[pu * self.v as usize + pv].evaluate(du, dv);
-        let normal = self.patches[pu*self.v as usize + pv].normal(du,dv);
+        let normal = self.patches[pu * self.v as usize + pv].normal(du, dv);
         //println!("{:?}", normal);
-        return pt + normal*dist;
-
+        return pt + normal * dist;
     }
 }
 

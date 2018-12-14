@@ -1,6 +1,6 @@
 use Data;
-use Math::Vector::Vector3;
 use Math::Vector::Vector2;
+use Math::Vector::Vector3;
 
 fn move_tool(
     result: &mut Vec<Vector3<f32>>,
@@ -128,124 +128,146 @@ fn move_tool(
     );
 }
 
-fn generate_bool_map(uRes: i32, vRes: i32, result: &mut [bool], u: u32, v: u32, path: &[Vector2<f32>], inv: bool) {
-    if (uRes*vRes) as usize != result.len() {
+fn generate_bool_map(
+    uRes: i32,
+    vRes: i32,
+    result: &mut [bool],
+    u: u32,
+    v: u32,
+    path: &[Vector2<f32>],
+    inv: Option<bool>,
+) -> Vec<i32>{
+    if (uRes * vRes) as usize != result.len() {
         panic!("wut!");
     }
-    
+
     let mut data = vec![0i32; result.len()];
 
     {
-    let mut set = |x: i32, y: i32, val: i32| {
-        data[(x*vRes+y) as usize] += val;
-    };
+        let mut set = |x: i32, y: i32, val: i32| {
+            data[(x * vRes + y) as usize] += val;
+        };
 
-    for i in 0..(path.len()-1) {
-        let from = &path[i];
-        let to = &path[i+1];
+        for i in 0..(path.len() - 1) {
+            let from = &path[i];
+            let to = &path[i + 1];
 
-        let up = from[0] > to[0];
+            let up = from[0] > to[0];
 
-        let fu = from[0]/(u as f32) * uRes as f32;
-        let tu = to[0]/(u as f32) * uRes as f32;
+            let fu = from[0] / (u as f32) * uRes as f32;
+            let tu = to[0] / (u as f32) * uRes as f32;
 
-        let pfu = f32::ceil(fu) as i32;
-        let ptu = f32::ceil(tu) as i32;
-        //let pfu = (if !up { f32::floor(fu)} else { f32::ceil(fu)}) as i32;
-        //let ptu = (if !up { f32::floor(tu)} else { f32::ceil(tu)}) as i32;
-        //println!("fu: {}, tu: {}, pfu: {}, ptu: {}", fu, tu, pfu, ptu);
-        
-        if pfu ==ptu {
-            continue;
-        }
+            let pfu = f32::ceil(fu) as i32;
+            let ptu = f32::ceil(tu) as i32;
+            //let pfu = (if !up { f32::floor(fu)} else { f32::ceil(fu)}) as i32;
+            //let ptu = (if !up { f32::floor(tu)} else { f32::ceil(tu)}) as i32;
+            //println!("fu: {}, tu: {}, pfu: {}, ptu: {}", fu, tu, pfu, ptu);
 
-        if (from[0]-to[0]).abs() > 0.8 {
-            let i = 0i32;
-            let h = (from[1] + to[1])/2.0;
-            let ph = h /(v as f32) * vRes as f32;
-            println!("-----from: {}, to: {}, up to: {}", pfu, ptu, ph);
+            if pfu == ptu {
+                continue;
+            }
+
+            if (from[0] - to[0]).abs() > 0.8 {
+                let i = 0i32;
+                let h = (from[1] + to[1]) / 2.0 -0.5;
+                let ph = h / (v as f32) * vRes as f32;
+                //println!("-----from: {}, to: {}, up to: {}", pfu, ptu, ph);
                 for j in 0..vRes {
                     if (j as f32) < ph {
-                        set(i,j, if !up {1} else {-1});
+                        set(i, j, if !up { 1 } else { -1 });
                     } else {
-                        set(i,j, if !up{-1} else {1});
+                        set(i, j, if !up { -1 } else { 1 });
                     }
                 }
-            continue;
-        }
+                continue;
+            }
 
-
-        let f = if up { ptu } else { pfu };
-        let t = if up { pfu } else { ptu };
-        println!("from: {}, to: {}", f,t);
-/*
-        let f2 = 0;
-        let t2 = if f > t {t} else {0};
-        let t = if f > t {uRes} else {t};
-*/
+            let f = if up { ptu } else { pfu };
+            let t = if up { pfu } else { ptu };
+            //println!("from: {}, to: {}", f, t);
             for i in (f..t) {
-                let ru = (i as f32)/(uRes as f32) * (u as f32);
-                let inter = (ru-from[0])/ (to[0] - from[0]);
-                let rv =(to[1]-from[1])* inter + from[1] -0.5;
+                let ru = (i as f32) / (uRes as f32) * (u as f32);
+                let inter = (ru - from[0]) / (to[0] - from[0]);
+                let rv = (to[1] - from[1]) * inter + from[1] - 0.5;
                 let pv = rv / (v as f32) * vRes as f32;
                 for j in 0..vRes {
                     if (j as f32) < pv {
-                        set(i,j, if up {1} else {-1});
+                        set(i, j, if up { 1 } else { -1 });
                     } else {
-                        set(i,j, if up{-1} else {1});
+                        set(i, j, if up { -1 } else { 1 });
                     }
                 }
-                //println!("inter: {}", inter);
-
             }
+        }
+    }
 
 
-    }
-    }
+    let cl = select(inv);
+
 
     for i in 0..result.len() {
-        if (data[i] > 0 && inv) || (data[i]<= 0 && !inv){
+        if cl(data[i]) {
             result[i] = false;
         }
     }
-
-
+    data
 }
 
-fn generate_height_map(result: &mut [bool], u: i32, v: i32, surface: &Data::Surface, toolRadius: f32) {
+fn select(inv: Option<bool>) -> Box<Fn(i32) -> bool> {
+
+    match inv {
+        Option::None => Box::new(|x| x==0),
+        Option::Some(f) => match f {
+            true => Box::new(|x| x>0),
+            false => Box::new(|x| x<0),
+        }
+    }
+}
+
+fn generate_height_map(
+    result: &mut [bool],
+    u: i32,
+    v: i32,
+    surface: &Data::Surface,
+    toolRadius: f32,
+) {
     for up in 0..u {
         for vp in 0..v {
-
-            let uc =(surface.u as i32*up) as f32 / (u as f32); 
-            let vc = (surface.v as i32*vp) as f32 / (v as f32);
+            let uc = (surface.u as i32 * up) as f32 / (u as f32);
+            let vc = (surface.v as i32 * vp) as f32 / (v as f32);
             let q = surface.eval_dist(uc, vc, toolRadius);
-            if q.y()<toolRadius {
-                result[(up*v+vp) as usize] = false;
+            if q.y() < toolRadius {
+                result[(up * v + vp) as usize] = false;
             }
         }
     }
 }
 
-fn generate_generic_details(surface: &Data::Surface,uRes: i32, vRes: i32, map: &[bool],  toolRadius: f32, us: impl Iterator<Item=i32>,f: i32, t: i32, up_by: f32) -> Vec<Vector3<f32>> {
-
-    let value = |up: i32,vp:i32| {
-        map[(up*vRes+vp) as usize]
-    };
+fn generate_generic_details(
+    surface: &Data::Surface,
+    uRes: i32,
+    vRes: i32,
+    map: &[bool],
+    toolRadius: f32,
+    us: impl Iterator<Item = i32>,
+    f: i32,
+    t: i32,
+    up_by: f32,
+) -> Vec<Vector3<f32>> {
+    let value = |up: i32, vp: i32| map[(up * vRes + vp) as usize];
     let mut result = vec![];
 
     for u in us {
-        let rev = u%2==0;
-        for v in 1..(t-f) {
-            let val = if rev { t-v} else {f+v};
-            if !value(u,val) {
+        let rev = u % 2 == 0;
+        for v in 1..(t - f) {
+            let val = if rev { t - v } else { f + v };
+            if !value(u, val) {
                 continue;
             }
-            let uc =(surface.u as i32*u) as f32 / (uRes as f32); 
-            let vc = (surface.v as i32*val) as f32 / (vRes as f32);
+            let uc = (surface.u as i32 * u) as f32 / (uRes as f32);
+            let vc = (surface.v as i32 * val) as f32 / (vRes as f32);
             //println!("uv: {}, uv: {}", uc, vc);
-            let q = surface.eval_dist(
-                uc,vc
-                , toolRadius);
+            let q = surface.eval_dist(uc, vc, toolRadius);
             result.push(q);
         }
     }
@@ -253,93 +275,183 @@ fn generate_generic_details(surface: &Data::Surface,uRes: i32, vRes: i32, map: &
     // add up if far enough
     let mut res2 = Vec::with_capacity(result.len());
 
-    for i in 0..(result.len()-1) {
-        let from = &result[i];
-        let to = &result[i+1];
+    if result.len() > 0 {
+        for i in 0..(result.len() - 1) {
+            let from = &result[i];
+            let to = &result[i + 1];
 
-        res2.push(*from);
+            res2.push(*from);
 
-        if (*to - *from).len_squared() > 0.04 {
-            res2.push(Vector3::new(from.x(), from.y()+up_by, from.z()));
-            res2.push(Vector3::new(to.x(), to.y()+up_by, to.z()));
+            if (*to - *from).len_squared() > 0.08 {
+                res2.push(Vector3::new(from.x(), from.y() + up_by, from.z()));
+                res2.push(Vector3::new(to.x(), to.y() + up_by, to.z()));
+            }
 
+            res2.push(*to);
         }
-
-        res2.push(*to);
-
     }
 
     res2
 }
 
-fn generate_gatling_details(gatling: &Data::Surface, gatling_wing: &[Vector2<f32>], toolRadius: f32) -> Vec<Vector3<f32>> {
+fn generate_gatling_details(
+    gatling: &Data::Surface,
+    gatling_wing: &[Vector2<f32>],
+    toolRadius: f32,
+) -> Vec<Vector3<f32>> {
+    let uRes: i32 = 30;
+    let vRes: i32 = 40;
 
-    let uRes :i32 = 60;
-    let vRes  :i32= 80;
-
-    let mut map = vec![true; (uRes*vRes) as usize];
-
+    let mut map = vec![true; (uRes * vRes) as usize];
 
     generate_height_map(&mut map, uRes, vRes, gatling, toolRadius);
-    generate_bool_map(uRes, vRes, &mut map, gatling.u, gatling.v, gatling_wing, true);
+    generate_bool_map(
+        uRes,
+        vRes,
+        &mut map,
+        gatling.u,
+        gatling.v,
+        gatling_wing,
+        Some(true),
+    );
 
-    generate_generic_details(gatling, uRes, vRes, &map, toolRadius, 0..uRes, 0, vRes/2, 0.0) 
+    generate_generic_details(
+        gatling,
+        uRes,
+        vRes,
+        &map,
+        toolRadius,
+        0..uRes,
+        0,
+        vRes / 2,
+        0.5,
+    )
 }
 
-fn generate_cockpit_details(cockpit: &Data::Surface, from_cockpit: &[Vector2<f32>], toolRadius: f32) -> Vec<Vector3<f32>> {
+fn generate_cockpit_details(
+    cockpit: &Data::Surface,
+    from_cockpit: &[Vector2<f32>],
+    toolRadius: f32,
+) -> Vec<Vector3<f32>> {
+    let uRes: i32 = 40;
+    let vRes: i32 = 80;
+
+    let mut map = vec![true; (uRes * vRes) as usize];
+
+    generate_bool_map(
+        uRes,
+        vRes,
+        &mut map,
+        cockpit.u,
+        cockpit.v,
+        from_cockpit,
+        None,
+    );
+
+    generate_generic_details(
+        cockpit,
+        uRes,
+        vRes,
+        &map,
+        toolRadius,
+        ((uRes * 3 / 4)..uRes).chain(0..uRes / 4),
+        3,
+        vRes / 2,
+        0.5,
+    )
+}
+
+fn generate_fin_details(
+    cockpit: &Data::Surface,
+    constraints: [&[Vector2<f32>];2],
+    toolRadius: f32,
+) -> Vec<Vector3<f32>> {
+    let uRes: i32 = 50;
+    let vRes: i32 = 80;
+
+    let mut map = vec![true; (uRes * vRes) as usize];
+
+    generate_bool_map(uRes, vRes, &mut map, cockpit.u, cockpit.v, constraints[0], Some(false));
+    generate_bool_map(uRes, vRes, &mut map, cockpit.u, cockpit.v, constraints[1], Some(false));
+
+    generate_generic_details(
+        cockpit,
+        uRes,
+        vRes,
+        &map,
+        toolRadius,
+        ((uRes / 2+10)..uRes).chain(0..uRes / 3-7),
+        vRes / 2,
+        vRes-4,
+        1.0,
+    )
+}
+
+fn generate_left_wing_details(
+    wing: &Data::Surface,
+    constraints: [&[Vector2<f32>]; 3],
+    toolRadius: f32,
+) -> Vec<Vector3<f32>> {
     let uRes: i32 = 60;
     let vRes: i32 = 120;
 
-    let mut map = vec![true; (uRes*vRes) as usize];
+    let mut map = vec![true; (uRes * vRes) as usize];
 
-    generate_bool_map(uRes, vRes, &mut map, cockpit.u, cockpit.v, from_cockpit, false);
 
-    generate_generic_details(cockpit, uRes, vRes, &map, toolRadius, ((uRes*3/4)..uRes).chain(0..uRes/4), 0, vRes/2, 0.0)
+    generate_height_map(&mut map, uRes, vRes, wing, toolRadius);
+    for constr in constraints.iter() {
+
+        let dat = generate_bool_map(uRes, vRes, &mut map, wing.u, wing.v, constr, Some(false));
+    }
+    generate_generic_details(wing, uRes, vRes, &map, toolRadius, ((uRes/2)..uRes), 0, vRes/2, 0.5)
 }
 
-fn generate_fin_details(cockpit: &Data::Surface, from_hull: &[Vector2<f32>], toolRadius: f32) -> Vec<Vector3<f32>> {
-    let uRes: i32 = 80;
-    let vRes: i32 = 120;
-
-    let mut map = vec![true; (uRes*vRes) as usize];
-
-    generate_bool_map(uRes, vRes, &mut map, cockpit.u, cockpit.v, from_hull, false);
-
-    generate_generic_details(cockpit, uRes, vRes, &map, toolRadius, ((uRes/2)..uRes).chain(0..uRes/3), vRes/2, vRes, 0.0)
-}
-
-fn generate_left_wing_details(wing: &Data::Surface, constraints: [&[Vector2<f32>];3], toolRadius:f32) -> Vec<Vector3<f32>> {
+fn generate_right_wing_details(
+    wing: &Data::Surface,
+    constraints: [&[Vector2<f32>]; 2],
+    toolRadius: f32,
+) -> Vec<Vector3<f32>> {
     let uRes: i32 = 60;
     let vRes: i32 = 120;
 
-    let mut map = vec![true; (uRes*vRes) as usize];
+    let mut map = vec![true; (uRes * vRes) as usize];
 
-    //generate_height_map(&mut map, uRes, vRes, wing, toolRadius);
 
-    //for constr in constraints.iter() {
-        generate_bool_map(uRes, vRes, &mut map, wing.u, wing.v, constraints[1], true);
+    generate_height_map(&mut map, uRes, vRes, wing, toolRadius);
+    for constr in constraints.iter() {
 
-    //}
-    //generate_generic_details(wing, uRes, vRes, &map, toolRadius, (0..(uRes/2)).rev().chain(((uRes/2)..uRes).rev()), 0, vRes, 1.0)
-    generate_generic_details(wing, uRes, vRes, &map, toolRadius, (0..uRes), 0, vRes, 1.0)
+        let dat = generate_bool_map(uRes, vRes, &mut map, wing.u, wing.v, constr, Some(false));
+    }
+    generate_generic_details(wing, uRes, vRes, &map, toolRadius, ((uRes/2)..uRes), vRes/2, vRes, 0.4)
 }
 
-fn generate_hull_details(hull: &Data::Surface, constraints: [&[Vector2<f32>];3], toolRadius: f32) -> Vec<Vector3<f32>> {
+fn generate_hull_details(
+    hull: &Data::Surface,
+    constraints: [&[Vector2<f32>]; 3],
+    toolRadius: f32,
+) -> Vec<Vector3<f32>> {
     let uRes: i32 = 60;
     let vRes: i32 = 120;
 
-    let mut map = vec![true; (uRes*vRes) as usize];
+    let mut map = vec![true; (uRes * vRes) as usize];
 
     generate_height_map(&mut map, uRes, vRes, hull, toolRadius);
 
     for constr in constraints.iter() {
-        generate_bool_map(uRes, vRes, &mut map, hull.u, hull.v, constr, true);
-
+        generate_bool_map(uRes, vRes, &mut map, hull.u, hull.v, constr, Some(true));
     }
-    generate_generic_details(hull, uRes, vRes, &map, toolRadius, (0..(uRes/2)).rev().chain(((uRes/2)..uRes).rev()), vRes/6, vRes*77/100, 1.0)
+    generate_generic_details(
+        hull,
+        uRes,
+        vRes,
+        &map,
+        toolRadius,
+        (0..(uRes / 2)).rev().chain(((uRes / 2)..uRes).rev()),
+        vRes / 6,
+        vRes * 77 / 100,
+        1.0,
+    )
 }
-
-
 
 pub fn generate_details(
     l: f32,
@@ -388,23 +500,139 @@ pub fn generate_details(
 
     let mut result = vec![];
 
-    //result.extend(generate_gatling_details(gatling, &d.curves[0], toolRadius));
+
+    result.push(Vector3::new(start.0, start.2, start.1));
+    result.push(Vector3::new(1.0, 5.0, 8.0));
+    result.push(Vector3::new(1.0, floorOffset + 0.5, 8.0));
     // curve: 5 albo 6
-    //result.extend(generate_cockpit_details(cockpit, &d.curves[5], toolRadius));
-    //result.extend(generate_fin_details(cockpit, &d.curves[7], toolRadius));
 
-    //result.extend(generate_hull_details(body, [&d.curves[6], &d.curves[4], &d.curves[2]],toolRadius));
-    //
-    result.extend(generate_left_wing_details(wings, [&d.curves[1], &d.curves[3], &d.curves[9]], toolRadius));
+    
+    result.extend(generate_left_wing_details(
+        wings,
+        [&d.curves[1], &d.curves[3], &d.curves[9]],
+        toolRadius,
+    ));
+    let lst = result.last().unwrap().clone();
+    result.push(Vector3::new(lst.x(), 5.0, lst.z()));
+    result.push(Vector3::new(-7.0, 5.0, 6.0));
 
+    result.extend(generate_right_wing_details(
+        wings,
+        [&d.curves[3], &d.curves[9]],
+        toolRadius,
+    ));
+    let lst = result.last().unwrap().clone();
+    result.push(Vector3::new(lst.x(), 5.0, lst.z()));
+    result.push(Vector3::new(-2.0, 5.0, -6.0));
+    result.push(Vector3::new(-2.0, 0.5, -6.0));
+
+    result.extend(generate_hull_details(body, [&d.curves[6], &d.curves[4], &d.curves[2]],toolRadius));
+
+    let lst = result.last().unwrap().clone();
+    result.push(Vector3::new(lst.x(), 5.0, lst.z()));
+
+    result.push(Vector3::new(1.0, 5.0, -4.0));
+    result.push(Vector3::new(1.0, 4.0, -4.0));
+    result.extend(generate_cockpit_details(cockpit, &d.curves[5], toolRadius));
+
+    let lst = result.last().unwrap().clone();
+    result.push(Vector3::new(lst.x(), 5.0, lst.z()));
+
+    result.push(Vector3::new(1.0, 5.0, 8.0));
+    result.push(Vector3::new(1.0, 3.5, 8.0));
+    result.extend(generate_fin_details(cockpit, [&d.curves[8], &d.curves[7]], toolRadius));
+
+    let lst = result.last().unwrap().clone();
+    result.push(Vector3::new(lst.x(), 5.0, lst.z()));
+
+    result.push(Vector3::new(6.0, 5.0, 0.0));
+    result.push(Vector3::new(6.0, 0.2, 0.0));
+    result.extend(generate_gatling_details(gatling, &d.curves[0], toolRadius));
+
+    let lst = result.last().unwrap().clone();
+    result.push(Vector3::new(lst.x(), 5.0, lst.z()));
+    result.push(Vector3::new(start.0, start.2, start.1));
+
+    //result.clear();
+
+
+    result.push(Vector3::new(start.0, start.2, start.1));
+
+    result.push(Vector3::new(4.8, 1.0, 1.5));
+
+    // gatling-skrzydlo
+    let len = d.curves[0].len();
+    let cur = &d.curves[0];
+    for pt in (len*34/100)..(len*13/20) {
+        result.push(gatling.eval_dist(cur[pt][0], cur[pt][1]-0.5, toolRadius));
+    }
+
+    let lst = result.last().unwrap().clone();
+    result.push(Vector3::new(lst.x(), 3.0, lst.z()));
+
+    result.push(Vector3::new(0.0, 5.0, -1.0));
+    result.push(Vector3::new(0.0, 3.0, -1.0));
+    // kokpit - kadłub
+    let len = d.curves[4].len();
+    let cur = &d.curves[4];
+
+    for pt in (0)..(len) {
+        result.push(body.eval_dist(cur[pt][0], cur[pt][1]-0.5, toolRadius));
+    }
+    let lst = result.last().unwrap().clone();
+    result.push(Vector3::new(lst.x(), 3.0, lst.z()));
+
+    result.push(Vector3::new(3.0, 3.0, -0.5));
+
+    // skrzydlo - kadlub - fin - kadlub - prawe skrzydlo
+    
+    let cur = &d.curves[2];
+    let len = cur.len();
+    // lewe skrzydlo -> kadlub
+    for pt in ((len*99/100)..(len)).chain((0)..(len*106/1000)) {
+        result.push(body.eval_dist(cur[pt][0], cur[pt][1]-0.5, toolRadius));
+        
+    }
+
+    let cur = &d.curves[6];
+    let len = cur.len();
+    for pt in ((len*95/100)..(len)).chain((0)..(len/3)) {
+        result.push(body.eval_dist(cur[pt][0], cur[pt][1]-0.5, toolRadius));
+    }
+
+    let cur = &d.curves[2];
+    let len = cur.len();
+    for pt in (len*185/1000)..(len*305/1000) {
+        result.push(body.eval_dist(cur[pt][0], cur[pt][1]-0.5, toolRadius));
+    }
+
+    let lst = result.last().unwrap().clone();
+    result.push(Vector3::new(lst.x(), 3.0, lst.z()));
+    result.push(Vector3::new(3.0, 3.0, 1.0));
+
+    // up bo koniec dużego szwu
+    // teraz skrzydla-kokpit
+
+    let cur = &d.curves[9];
+    let len = cur.len();
+    for pt in (len*2/100)..(len*31/100) {
+        result.push(wings.eval_dist(cur[pt][0], cur[pt][1]-0.5, toolRadius));
+    }
+
+
+    let flag = true;
 
     for elem in &mut result {
-            let tmp = *elem;
-
-            *elem = Vector3::new(tmp.x(), tmp.z(), f32::max(floorOffset + tmp.y()- toolRadius, floorOffset));
-            //*elem = Vector3::new(tmp.x(), tmp.y()+0.5, tmp.z());
-            if elem.z() < 0.0{
-            }
+        let tmp = *elem;
+        if flag {
+        *elem = Vector3::new(
+            tmp.x(),
+            tmp.z(),
+            f32::max(floorOffset + tmp.y() - toolRadius, floorOffset),
+        );
+        } else {
+        *elem = Vector3::new(tmp.x(), tmp.y(), tmp.z());
+        }
     }
     result
 }
@@ -669,8 +897,8 @@ pub fn generate_flat(
     for i in 0..(rows + 1) {
         move_tool(
             &mut result,
-            (i * step+5) as i32,
-            prev * (step as i32)+5,
+            (i * step + 5) as i32,
+            prev * (step as i32) + 5,
             &mut y,
             h,
             &g,
@@ -689,8 +917,8 @@ pub fn generate_flat(
     for i in (0..rows).rev() {
         move_tool(
             &mut result,
-            (i * step+5) as i32,
-            prev * (step as i32)+5,
+            (i * step + 5) as i32,
+            prev * (step as i32) + 5,
             &mut y,
             h,
             &g,

@@ -1,4 +1,4 @@
-use std::ops::{Add, Index, IndexMut, Mul, Sub, Div};
+use std::ops::{Add, Div, Index, IndexMut, Mul, Sub};
 
 use super::Matrix::Matrix4;
 
@@ -116,46 +116,50 @@ where
     }
 }
 
-
-pub trait VecElem : Copy + Add<Output=Self> + Mul<Output=Self> + Sub<Output=Self> + Div<Output=Self> + Default {
+pub trait VecElem:
+    Copy + Add<Output = Self> + Mul<Output = Self> + Sub<Output = Self> + Div<Output = Self> + Default
+{
 }
 
-impl<T: Copy + Add<Output=T> + Mul<Output=T> + Sub<Output=T> + Div<Output=T> + Default> VecElem for T{}
-
+impl<T: Copy + Add<Output = T> + Mul<Output = T> + Sub<Output = T> + Div<Output = T> + Default>
+    VecElem for T
+{}
 
 pub struct Vector2<T>
-where T: VecElem
+where
+    T: VecElem,
 {
-    content: [T;2],
+    content: [T; 2],
 }
 
-impl<T> Vector2<T> where T: VecElem {
-    pub fn new(x: T, y:T) -> Self {
-        Vector2{content: [x,y]}
+impl<T> Vector2<T>
+where
+    T: VecElem,
+{
+    pub fn new(x: T, y: T) -> Self {
+        Vector2 { content: [x, y] }
     }
-
 }
-
 
 #[derive(Copy, Clone, Debug)]
 pub struct Vector3<T>
 where
-    T: VecElem
+    T: VecElem,
 {
     content: [T; 3],
 }
 
 impl Vector3<f32> {
     pub fn normalized(&self) -> Self {
-        let len = (self.x()*self.x() + self.y() * self.y() + self.z() * self.z()).sqrt();
+        let len = (self.x() * self.x() + self.y() * self.y() + self.z() * self.z()).sqrt();
 
-        return Self::new(self.x()/len, self.y()/len, self.z()/len);
+        return Self::new(self.x() / len, self.y() / len, self.z() / len);
     }
 }
 
 impl<T> Vector3<T>
 where
-    T: VecElem
+    T: VecElem,
 {
     pub fn Sum(&self) -> T {
         self.content[0] + self.content[1] + self.content[2]
@@ -188,7 +192,9 @@ where
     }
 
     pub fn len_squared(&self) -> T {
-        self.content[0]*self.content[0] + self.content[1]*self.content[1] + self.content[2]*self.content[2]
+        self.content[0] * self.content[0]
+            + self.content[1] * self.content[1]
+            + self.content[2] * self.content[2]
     }
 
     pub fn Content(&self) -> [T; 3] {
@@ -196,14 +202,17 @@ where
     }
 
     pub fn cross(v1: &Self, v2: &Self) -> Self {
-        Self::new(v1.y()*v2.z() - v1.z()*v2.y(), v1.z()*v2.x() - v1.x()*v2.z(), v1.x()*v2.y() - v1.y()*v2.x())
+        Self::new(
+            v1.y() * v2.z() - v1.z() * v2.y(),
+            v1.z() * v2.x() - v1.x() * v2.z(),
+            v1.x() * v2.y() - v1.y() * v2.x(),
+        )
     }
-
 }
 
 impl<T> Mul<Vector3<T>> for Vector3<T>
 where
-    T: VecElem
+    T: VecElem,
 {
     type Output = Vector3<T>;
     fn mul(self, rhs: Vector3<T>) -> Vector3<T> {
@@ -217,7 +226,7 @@ where
 
 impl<T> Mul<T> for Vector3<T>
 where
-    T: VecElem
+    T: VecElem,
 {
     type Output = Vector3<T>;
     fn mul(self, rhs: T) -> Vector3<T> {
@@ -231,7 +240,7 @@ where
 
 impl<T> Add for Vector3<T>
 where
-    T: VecElem
+    T: VecElem,
 {
     type Output = Vector3<T>;
     fn add(self, rhs: Vector3<T>) -> Vector3<T> {
@@ -245,11 +254,11 @@ where
 
 impl<T> Sub for Vector3<T>
 where
-    T: VecElem
+    T: VecElem,
 {
     type Output = Vector3<T>;
     fn sub(self, rhs: Vector3<T>) -> Vector3<T> {
-       Vector3::new( 
+        Vector3::new(
             self.content[0] - rhs.content[0],
             self.content[1] - rhs.content[1],
             self.content[2] - rhs.content[2],
