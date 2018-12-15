@@ -453,6 +453,31 @@ fn generate_hull_details(
     )
 }
 
+fn generate_front_details(
+    hull: &Data::Surface,
+    toolRadius: f32
+    )->Vec<Vector3<f32>> {
+
+    let uRes: i32 = 60;
+    let vRes: i32 = 120;
+
+    let mut map = vec![true; (uRes * vRes) as usize];
+
+    generate_height_map(&mut map, uRes, vRes, hull, toolRadius);
+
+    generate_generic_details(
+        hull,
+        uRes,
+        vRes,
+        &map,
+        toolRadius,
+        (0..(uRes / 2)).rev().chain(((uRes / 2)..uRes).rev()),
+        vRes/20,
+        vRes/7,
+        1.0,
+    )
+}
+
 pub fn generate_details(
     l: f32,
     r: f32,
@@ -523,6 +548,15 @@ pub fn generate_details(
     ));
     let lst = result.last().unwrap().clone();
     result.push(Vector3::new(lst.x(), 5.0, lst.z()));
+
+    result.push(Vector3::new(-2.0, 5.0, -6.0));
+    result.push(Vector3::new(-2.0, 0.5, -6.0));
+
+    result.extend(generate_front_details(body,toolRadius));
+
+    let lst = result.last().unwrap().clone();
+    result.push(Vector3::new(lst.x(), 5.0, lst.z()));
+
     result.push(Vector3::new(-2.0, 5.0, -6.0));
     result.push(Vector3::new(-2.0, 0.5, -6.0));
 
@@ -551,12 +585,6 @@ pub fn generate_details(
 
     let lst = result.last().unwrap().clone();
     result.push(Vector3::new(lst.x(), 5.0, lst.z()));
-    result.push(Vector3::new(start.0, start.2, start.1));
-
-    //result.clear();
-
-
-    result.push(Vector3::new(start.0, start.2, start.1));
 
     result.push(Vector3::new(4.8, 1.0, 1.5));
 

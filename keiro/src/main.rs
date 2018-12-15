@@ -496,7 +496,6 @@ fn main() {
             let viewMat = viewMat.Transposed();
             //let perspectiveMat = drawParams.camera.GetProjectionMatrix().Transposed();
             let perspectiveMat = Matrix4::<f32>::Ortho(-7.5f32, 7.5, -7.5, 7.5).Transposed();
-            /*
             drawParams.toolRadius = -0.9;
             drawParams.ground = groundRect(&display, 7.9f32, 0.9);
             render(&mut fb, &drawParams, &viewMat, &perspectiveMat);
@@ -532,6 +531,7 @@ fn main() {
 
             points_to_file(&roughPath, "/home/adam/paths/r1.k16");
 
+            /*
             let ground2 = groundRect(&display, 10.0f32, 0.0);
             drawParams.ground = ground2;
             drawParams.toolRadius = -0.6;
