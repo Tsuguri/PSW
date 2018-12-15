@@ -846,7 +846,7 @@ pub fn generate_contour(
     );
     x -= step as i32;
 
-    let step = 530;
+    let step = 460;
     up = true;
     move_tool(
         &mut result,

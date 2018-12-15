@@ -354,7 +354,7 @@ fn main() {
     let groundVert = LoadFileContent(&String::from("res/Shaders/ground.vert"));
     let groundFrag = LoadFileContent(&String::from("res/Shaders/ground.frag"));
 
-    let sceneData = deser("res/model2.xml");
+    let sceneData = deser("res/model3.xml");
 
     println!("cutting curves: {}", sceneData.curves.len());
 
@@ -531,7 +531,6 @@ fn main() {
 
             points_to_file(&roughPath, "/home/adam/paths/r1.k16");
 
-            /*
             let ground2 = groundRect(&display, 10.0f32, 0.0);
             drawParams.ground = ground2;
             drawParams.toolRadius = -0.6;
@@ -592,9 +591,8 @@ fn main() {
                 depth.read(),
             );
 
-            //drawParams.l2 = Option::Some(LineFromPoints( flat_contour.iter(), &display));
+            drawParams.l2 = Option::Some(LineFromPoints( flat_contour.iter(), &display));
             points_to_file(&flat_contour, "/home/adam/paths/r3.f10");
-*/
 
             drawParams.toolRadius = -0.4;
             drawParams.ground = groundRect(&display, 7.9f32, -drawParams.toolRadius);
@@ -624,7 +622,7 @@ fn main() {
 
             points_to_file(&details, "/home/adam/paths/r4.k8");
             println!("generated {} points", details.len());
-            drawParams.l2 = Option::Some(LineFromPoints(details.iter(), &display));
+            //drawParams.l2 = Option::Some(LineFromPoints(details.iter(), &display));
 
             //SaveTextureToFile(depth.read(), "/home/adam/depth.png");
 
