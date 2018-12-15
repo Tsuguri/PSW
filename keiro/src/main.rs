@@ -620,7 +620,7 @@ fn main() {
                 &sceneData,
             );
 
-            points_to_file(&details, "/home/adam/paths/r4.k8");
+            points_to_file(&details, "/home/adam/paths/r4.k08");
             println!("generated {} points", details.len());
             //drawParams.l2 = Option::Some(LineFromPoints(details.iter(), &display));
 

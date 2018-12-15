@@ -121,11 +121,29 @@ fn move_tool(
         }
     }
 
-    result.extend(
-        points
+
+    // filter points
+    
+    let pts: Vec<Vector3<f32>> = points
             .iter()
-            .map(|pt| Vector3::<f32>::new(xToWorld(pt.0), yToWorld(pt.1), floorOffset + h)),
-    );
+            .map(|pt| Vector3::<f32>::new(xToWorld(pt.0), yToWorld(pt.1), floorOffset + h)).collect();
+
+    let mut prev = pts.first().unwrap().clone(); 
+    let last = pts.last().unwrap().clone();
+
+    let mut ptss = vec![];
+    ptss.push(prev);
+    for pt in pts {
+        if (pt-prev).len_squared() > 0.09 {
+            prev = pt;
+            ptss.push(pt);
+        }
+
+    }
+
+
+    ptss.push(last);
+    result.extend(ptss);
 }
 
 fn generate_bool_map(
@@ -299,8 +317,8 @@ fn generate_gatling_details(
     gatling_wing: &[Vector2<f32>],
     toolRadius: f32,
 ) -> Vec<Vector3<f32>> {
-    let uRes: i32 = 30;
-    let vRes: i32 = 40;
+    let uRes: i32 = 40;
+    let vRes: i32 = 60;
 
     let mut map = vec![true; (uRes * vRes) as usize];
 
@@ -333,8 +351,8 @@ fn generate_cockpit_details(
     from_cockpit: &[Vector2<f32>],
     toolRadius: f32,
 ) -> Vec<Vector3<f32>> {
-    let uRes: i32 = 40;
-    let vRes: i32 = 80;
+    let uRes: i32 = 60;
+    let vRes: i32 = 120;
 
     let mut map = vec![true; (uRes * vRes) as usize];
 
@@ -366,8 +384,8 @@ fn generate_fin_details(
     constraints: [&[Vector2<f32>];2],
     toolRadius: f32,
 ) -> Vec<Vector3<f32>> {
-    let uRes: i32 = 50;
-    let vRes: i32 = 80;
+    let uRes: i32 = 80;
+    let vRes: i32 = 120;
 
     let mut map = vec![true; (uRes * vRes) as usize];
 
@@ -392,8 +410,8 @@ fn generate_left_wing_details(
     constraints: [&[Vector2<f32>]; 3],
     toolRadius: f32,
 ) -> Vec<Vector3<f32>> {
-    let uRes: i32 = 60;
-    let vRes: i32 = 120;
+    let uRes: i32 = 120;
+    let vRes: i32 = 180;
 
     let mut map = vec![true; (uRes * vRes) as usize];
 
@@ -411,8 +429,8 @@ fn generate_right_wing_details(
     constraints: [&[Vector2<f32>]; 2],
     toolRadius: f32,
 ) -> Vec<Vector3<f32>> {
-    let uRes: i32 = 60;
-    let vRes: i32 = 120;
+    let uRes: i32 = 120;
+    let vRes: i32 = 180;
 
     let mut map = vec![true; (uRes * vRes) as usize];
 
@@ -430,8 +448,8 @@ fn generate_hull_details(
     constraints: [&[Vector2<f32>]; 3],
     toolRadius: f32,
 ) -> Vec<Vector3<f32>> {
-    let uRes: i32 = 60;
-    let vRes: i32 = 120;
+    let uRes: i32 = 100;
+    let vRes: i32 = 180;
 
     let mut map = vec![true; (uRes * vRes) as usize];
 
@@ -647,6 +665,8 @@ pub fn generate_details(
         result.push(wings.eval_dist(cur[pt][0], cur[pt][1]-0.5, toolRadius));
     }
 
+    let lst = result.last().unwrap().clone();
+    result.push(Vector3::new(lst.x(), 5.0, lst.z()));
 
     let flag = true;
 
@@ -662,7 +682,23 @@ pub fn generate_details(
         *elem = Vector3::new(tmp.x(), tmp.y(), tmp.z());
         }
     }
-    result
+
+    let mut prev = result.first().unwrap().clone(); 
+    let last = result.last().unwrap().clone();
+
+    let mut ptss = vec![];
+    ptss.push(prev);
+    for pt in result{
+        if (pt-prev).len_squared() > 0.01 {
+            prev = pt;
+            ptss.push(pt);
+        }
+
+    }
+
+
+    ptss.push(last);
+    ptss
 }
 
 pub fn generate_contour(
@@ -1090,7 +1126,24 @@ pub fn generate_rough(
     println!("upper: {}, lower: {}", upperResult.len(), result.len());
 
     upperResult.extend(result.iter());
-    println!("Result size: {}", upperResult.len());
 
-    upperResult
+
+    let mut prev = upperResult.first().unwrap().clone(); 
+    let last = upperResult.last().unwrap().clone();
+
+    let mut ptss = vec![];
+    ptss.push(prev);
+    for pt in upperResult {
+        if (pt-prev).len_squared() > 0.09 {
+            prev = pt;
+            ptss.push(pt);
+        }
+
+    }
+
+
+    ptss.push(last);
+
+    println!("Result size: {}", ptss.len());
+    ptss
 }
