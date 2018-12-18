@@ -421,7 +421,7 @@ fn generate_left_wing_details(
 
         let dat = generate_bool_map(uRes, vRes, &mut map, wing.u, wing.v, constr, Some(false));
     }
-    generate_generic_details(wing, uRes, vRes, &map, toolRadius, ((uRes/2)..uRes), 0, vRes/2, 0.5)
+    generate_generic_details(wing, uRes, vRes, &map, toolRadius, ((uRes/2-5)..uRes), 0, vRes/2, 0.5)
 }
 
 fn generate_right_wing_details(
@@ -440,7 +440,7 @@ fn generate_right_wing_details(
 
         let dat = generate_bool_map(uRes, vRes, &mut map, wing.u, wing.v, constr, Some(false));
     }
-    generate_generic_details(wing, uRes, vRes, &map, toolRadius, ((uRes/2)..uRes), vRes/2, vRes, 0.4)
+    generate_generic_details(wing, uRes, vRes, &map, toolRadius, ((uRes/2-5)..uRes), vRes/2, vRes, 0.4)
 }
 
 fn generate_hull_details(

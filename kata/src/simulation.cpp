@@ -5,7 +5,7 @@
 #include <list>
 
 Simulation::Simulation(QObject* parent) : QObject(parent), a(false), b(false), showOpt(false), timer(new QTimer(this)), available() {
-    timer->setInterval(100);
+    timer->setInterval(20);
     QObject::connect(timer, &QTimer::timeout, this, &Simulation::tick);
 }
 
@@ -19,12 +19,12 @@ int Simulation::getRects() const {
 
 void Simulation::setR1(float val){
     r1 = val;
-    //emit r1Changed();
+    emit r1Changed();
 }
 
 void Simulation::setR2(float val) {
     r2 = val;
-    //emit r2Changed();
+    emit r2Changed();
 }
 
 float Simulation::getR1() const {
@@ -223,9 +223,16 @@ std::vector<std::pair<int, int>> Simulation::BFS(int a1, int a2, int b1, int b2)
  
     kolejka.push_back(std::make_pair(a1, a2));
     visited[a1][a2]= std::make_pair(-1, -1);
+    V[a1][a2]=true;
+
+    if (a1==b1 && a2==b2) {
+        return std::vector<std::pair<int, int>>{kolejka.front()};
+    }
  
+    int p =1;
     while(!kolejka.empty())
     {
+        p++;
         //std::cout<<" in"<<std::endl;
  
         auto s = kolejka.front();
@@ -243,7 +250,10 @@ std::vector<std::pair<int, int>> Simulation::BFS(int a1, int a2, int b1, int b2)
             auto c1 = p1;
             auto c2 = p2;
             while(c1!=-1 && c2!=-1) {
-                std::cout<<"generating resul"<<std::endl;
+                //if( result.size()>10) {
+                    //throw 0;
+                //}
+                //std::cout<<"p: "<<c1<<" "<<c2<<std::endl;
 
                 result.push_back(std::make_pair(c1,c2));
                 auto pt = visited[c1][c2];
@@ -258,17 +268,18 @@ std::vector<std::pair<int, int>> Simulation::BFS(int a1, int a2, int b1, int b2)
  
             for(int j = -1;j <=1 ;j+=2)
             {
-                auto dx = (p1+360)%360;
+                auto dx = p1;
                 auto dy = (p2+j+360)%360;
                 if(!V[dx][ dy]) {
                     visited[dx][dy] = pt;
                     V[dx][dy]=true;
                     kolejka.push_back(std::make_pair(dx, dy));
+                    //std::cout<<"p: "<<dx<<" "<<dy<<" from: "<<p1<<" "<<p2<<std::endl;
 
                 }
 
                 dx = (p1+j+360)%360;
-                dy = (p2+360)%360;
+                dy = p2;
                 if(!V[dx][ dy]) {
                     visited[dx][dy] = pt;
                     V[dx][dy]=true;
@@ -281,10 +292,12 @@ std::vector<std::pair<int, int>> Simulation::BFS(int a1, int a2, int b1, int b2)
             } 
     }
     std::cout<<"kolejka: "<<kolejka.size()<<std::endl;
+    return std::vector<std::pair<int, int>>{std::make_pair(a1,a2)};
  
 }
 
 void Simulation::stop() {
+    std::cout<<"stopping"<<std::endl;
 
     timer->stop();
     frame = -1;

@@ -29,17 +29,6 @@ ApplicationWindow {
         r2: settings.l2
     }
 
-    footer: ToolBar {
-        height: 24
-        Row {
-            anchors.fill: parent
-            anchors.margins: 4
-
-            Label {
-                text: "status w tool barze"
-            }
-        }
-    }
 
     Rectangle {
         id: background
@@ -79,7 +68,8 @@ ApplicationWindow {
                 }
                 SimulationControl {
                     id: control
-                    onClose: {
+                    onStop: {
+                        console.log("stupp")
                         simulation.stop();
                     }
 

@@ -1,0 +1,14 @@
+<RCC>
+    <qresource prefix="/">
+        <file>main.qml</file>
+        <file>SimulationProperties.qml</file>
+        <file>BezierCubeMaterial.qml</file>
+        <file>BezierCubeEffect.qml</file>
+        <file>controls/DoubleTextField.qml</file>
+        <file>controls/SectionPlate.qml</file>
+        <file>controls/ScrollableSectionPlate.qml</file>
+        <file>shaders/robustwireframe.vert</file>
+        <file>shaders/robustwireframe.frag</file>
+        <file>shaders/robustwireframe.geom</file>
+    </qresource>
+</RCC>
