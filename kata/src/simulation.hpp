@@ -3,11 +3,17 @@
 #include <vector>
 
 #include<QObject>
+#include <QTimer>
+
+#include "CSpaceImageProvider.hpp"
 
 class Simulation : public QObject {
     Q_OBJECT
 
     public:
+
+    constexpr static int a1Division = 360;
+    constexpr static int a2Division = 360;
         explicit Simulation(QObject* parent = nullptr);
 
         Q_PROPERTY(bool showOptions READ getShowOptions NOTIFY showOptionsChanged);
@@ -19,6 +25,9 @@ class Simulation : public QObject {
 
         Q_PROPERTY(float endA1  READ getEndA1 NOTIFY endChanged);
         Q_PROPERTY(float endA2  READ getEndA2 NOTIFY endChanged);
+
+        Q_PROPERTY(float a1  READ geta1 NOTIFY stateChanged);
+        Q_PROPERTY(float a2  READ geta2 NOTIFY stateChanged);
 
         Q_PROPERTY(float a1a  READ getA1A NOTIFY a1aChanged);
         Q_PROPERTY(float a2a  READ getA2A NOTIFY a2aChanged);
@@ -36,6 +45,9 @@ class Simulation : public QObject {
         float getA1B() const;
         float getA2B() const;
 
+        float geta1() const;
+        float geta2() const;
+
         float getStartA1() const;
         float getStartA2() const;
         float getEndA1() const;
@@ -47,13 +59,21 @@ class Simulation : public QObject {
 
         Q_INVOKABLE void startSimulation();
         Q_INVOKABLE void clearRects();
+
+        Q_INVOKABLE void run(CSpaceImageProvider* provi);
+        Q_INVOKABLE void stop();
+
         Q_INVOKABLE void confirmA();
         Q_INVOKABLE void confirmB();
 
         Q_INVOKABLE void placeStart(int x, int y);
         Q_INVOKABLE void placeEnd(int x, int y);
 
+
+        bool colliding(int a1, int a2) const;
+
 signals:
+        void stateChanged();
         void showOptionsChanged();
         void r1Changed();
         void r2Changed();
@@ -68,6 +88,8 @@ signals:
         void endChanged();
 
     private:
+        void tick();
+        std::vector<std::pair<int, int>> BFS(int a1, int a2, int b1, int b2);
 std::tuple<float, float, float, float> InverseKinematics(int x, int y);
         bool a,b, showOpt;
         float r1,r2;
@@ -77,5 +99,10 @@ std::tuple<float, float, float, float> InverseKinematics(int x, int y);
         float a1a, a2a, a2b, a1b;
 
         bool selectingA;
+
+        std::vector<std::pair<int, int>> path;
+        std::array<std::array<bool, 360>, 360> available;
+        QTimer* timer;
+        int frame;
 
 };

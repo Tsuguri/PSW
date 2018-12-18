@@ -28,50 +28,6 @@ ApplicationWindow {
         r1: settings.l1
         r2: settings.l2
     }
-    Item {
-        id: simulationasda
-
-        property real r1: settings.l1
-        property real r2: settings.l2
-        property int rects: 0
-
-        function startSimulation() {
-            console.log("whatevva");
-        }
-
-        function clearRects() {
-            console.log("clearing rects");
-        }
-
-        function confirmA() {
-            console.log("confirming a");
-        }
-
-        function confirmB() {
-            console.log("confirming b");
-        }
-
-
-        property bool showOptions: true
-        property bool showStart: true
-        property bool showEnd: true
-
-        property real a1: 10
-        property real a2: 20
-
-        property real startA1: 30
-        property real startA2: 40
-
-        property real endA1: 50
-        property real endA2: 60
-
-        property real startA1A: 70
-        property real startA2A: 80
-
-        property real startA1B: 90
-        property real startA2B: 100
-    }
-
 
     footer: ToolBar {
         height: 24
@@ -118,8 +74,17 @@ ApplicationWindow {
                     obstaclesCount: simulation.rects
                     onClearRectangles: simulation.clearRects()
                     onSimulate: {
-                        simulation.startSimulation()
+                        simulation.run(cSpaceImagesProvider)
                     }
+                }
+                SimulationControl {
+                    id: control
+                    onClose: {
+                        simulation.stop();
+                    }
+
+
+
                 }
             }
         }
@@ -198,6 +163,16 @@ ApplicationWindow {
                                 y: -r
                                 width: 2 * r
                                 height: 2 * r
+                            }
+
+                            Arm {
+                                id: movingArm
+                                l1: simulation.r1
+                                l2: simulation.r2
+                                a1: simulation.a1
+                                a2: simulation.a2
+                                color: "green"
+                                visible: true
                             }
 
 

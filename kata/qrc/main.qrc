@@ -2,7 +2,10 @@
     <qresource prefix="/">
         <file>main.qml</file>
         <file>Arm.qml</file>
+        <file>SimulationControl.qml</file>
 	<file>SceneSettings.qml</file>
 	<file>controls/DoubleTextField.qml</file>
     </qresource>
+    <qresource prefix="/images"/>
+    <qresource prefix="/models"/>
 </RCC>

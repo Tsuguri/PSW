@@ -2,8 +2,12 @@
 #include <cmath>
 #include <iostream>
 
+#include <list>
 
-Simulation::Simulation(QObject* parent) : QObject(parent), a(false), b(false), showOpt(false) {}
+Simulation::Simulation(QObject* parent) : QObject(parent), a(false), b(false), showOpt(false), timer(new QTimer(this)), available() {
+    timer->setInterval(100);
+    QObject::connect(timer, &QTimer::timeout, this, &Simulation::tick);
+}
 
 bool Simulation::getShowOptions() const {
     return showOpt;
@@ -172,4 +176,129 @@ float Simulation::getA1B() const {
 
 float Simulation::getA2B() const {
     return a2b;
+}
+
+float Simulation::geta1() const {
+    return a1;
+}
+
+float Simulation::geta2() const {
+    return a2;
+}
+
+bool Simulation::colliding(int a1, int a2) const{
+    return false;
+
+}
+
+void Simulation::run(CSpaceImageProvider* provi) {
+    timer->start();
+    frame=0;
+
+    //provi->setCSpaceImage(this);
+    //
+    std::cout<<"filling"<<std::endl;
+    path = BFS(startA1, startA2, endA1, endA2);
+    for(const auto& elem : path ) { 
+        //std::cout<<std::get<0>(elem)<<" "<<std::get<1>(elem)<<std::endl;
+    }
+}
+
+std::vector<std::pair<int, int>> Simulation::BFS(int a1, int a2, int b1, int b2)
+{
+    std::list<std::pair<int,int>> kolejka;
+
+    a1 = (a1+360)%360;
+    a2 = (a2+360)%360;
+    b1 = (b1+360)%360;
+    b2 = (b2+360)%360;
+    std::cout<<"path from "<<a1<<" "<<a2<<" to "<<b1<<" "<<b2<<std::endl;
+ 
+    int n = 360;
+    bool V[360][360];
+    std::array<std::array<std::pair<int, int>,360>,360> visited;
+    for(int j=0;j<n;++j)
+        for(int i =0; i<n; i++)
+            V[i][j] = false;//Wierzchołki nie odwiedzone
+ 
+    kolejka.push_back(std::make_pair(a1, a2));
+    visited[a1][a2]= std::make_pair(-1, -1);
+ 
+    while(!kolejka.empty())
+    {
+        //std::cout<<" in"<<std::endl;
+ 
+        auto s = kolejka.front();
+        kolejka.pop_front();//Usuwamy odwiedzany element
+ 
+        auto pt = s;
+        auto p1 = std::get<0>(pt);
+        auto p2 = std::get<1>(pt);
+        //std::cout<<" checking pt "<<p1<<" "<<p2<<std::endl;
+
+        if(p1 == b1 && p2 == b2){
+            std::vector<std::pair<int, int>> result;
+            //std::cout<<"result found"<<std::endl;
+
+            auto c1 = p1;
+            auto c2 = p2;
+            while(c1!=-1 && c2!=-1) {
+                std::cout<<"generating resul"<<std::endl;
+
+                result.push_back(std::make_pair(c1,c2));
+                auto pt = visited[c1][c2];
+                c1 = std::get<0>(pt);
+                c2 = std::get<1>(pt);
+
+            }
+            return result;
+
+        }
+ 
+ 
+            for(int j = -1;j <=1 ;j+=2)
+            {
+                auto dx = (p1+360)%360;
+                auto dy = (p2+j+360)%360;
+                if(!V[dx][ dy]) {
+                    visited[dx][dy] = pt;
+                    V[dx][dy]=true;
+                    kolejka.push_back(std::make_pair(dx, dy));
+
+                }
+
+                dx = (p1+j+360)%360;
+                dy = (p2+360)%360;
+                if(!V[dx][ dy]) {
+                    visited[dx][dy] = pt;
+                    V[dx][dy]=true;
+                    kolejka.push_back(std::make_pair(dx, dy));
+
+                }
+
+        //std::cout<<"iksde"<<std::endl;
+
+            } 
+    }
+    std::cout<<"kolejka: "<<kolejka.size()<<std::endl;
+ 
+}
+
+void Simulation::stop() {
+
+    timer->stop();
+    frame = -1;
+}
+
+void Simulation::tick() {
+    frame++;
+    if(frame >= path.size()) {
+        frame=0;
+    }
+
+    a1 = std::get<0>(path[frame]);
+    a2 = std::get<1>(path[frame]);
+
+    emit stateChanged();
+
 }
