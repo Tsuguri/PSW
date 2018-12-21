@@ -723,9 +723,9 @@ pub fn generate_contour(
     let sceneWidth = r - l;
     let sceneLength = u - b;
 
-    let xToWorld = |x: i32| ((x as f32) / (width as f32 - 1.0) * 1.04 - 0.02) * sceneWidth + l;
+    let xToWorld = |x: i32| ((x as f32) / (width as f32 - 1.0) * 1.06 - 0.03) * sceneWidth + l;
 
-    let yToWorld = |y: i32| ((y as f32) / (height as f32 - 1.0) * 1.04 - 0.02) * sceneLength + b;
+    let yToWorld = |y: i32| ((y as f32) / (height as f32 - 1.0) * 1.06 - 0.03) * sceneLength + b;
     let mut y: i32 = 0;
     let g = |px: i32, py: i32| data[(py * width + px) as usize];
 
@@ -743,7 +743,7 @@ pub fn generate_contour(
     result.push(Vector3::new(xToWorld(x), yToWorld(y), floorOffset));
 
     let mut up = false;
-    let step = 1835;
+    let step = 1875;
     move_tool(
         &mut result,
         x,
@@ -761,6 +761,7 @@ pub fn generate_contour(
         false,
     );
     x += step as i32;
+    /*
 
     let step = 500;
     up = false;
@@ -901,6 +902,7 @@ pub fn generate_contour(
         true,
     );
     y += step as i32;
+    */
 
     result.push(Vector3::new(
         xToWorld(25),
@@ -933,12 +935,12 @@ pub fn generate_flat(
     let sceneWidth = r - l;
     let sceneLength = u - b;
 
-    let xToWorld = |x: i32| ((x as f32) / (width as f32 - 1.0) * 1.04 - 0.02) * sceneWidth + l;
+    let xToWorld = |x: i32| ((x as f32) / (width as f32 - 1.0) * 1.06 - 0.03) * sceneWidth + l;
 
-    let yToWorld = |y: i32| ((y as f32) / (height as f32 - 1.0) * 1.04 - 0.02) * sceneLength + b;
+    let yToWorld = |y: i32| ((y as f32) / (height as f32 - 1.0) * 1.06 - 0.03) * sceneLength + b;
 
     let rows = ((r - l) / (1.8 * toolRadius)).ceil() as u32;
-    let step = (map.width as f32 / rows as f32).floor() as u32;
+    let step = (map.width as f32 / rows as f32).floor() as u32-4;
 
     println!("will make {} rows with step {}", rows, step);
 
@@ -961,8 +963,8 @@ pub fn generate_flat(
     for i in 0..(rows + 1) {
         move_tool(
             &mut result,
-            (i * step + 5) as i32,
-            prev * (step as i32) + 5,
+            (i * step + 15) as i32,
+            prev * (step as i32) + 15,
             &mut y,
             h,
             &g,
@@ -977,12 +979,12 @@ pub fn generate_flat(
         );
         prev = i as i32;
     }
-
-    for i in (0..rows).rev() {
+    up = false;
+    for i in (0..(rows+1)).rev() {
         move_tool(
             &mut result,
-            (i * step + 5) as i32,
-            prev * (step as i32) + 5,
+            (i * step) as i32,
+            prev * (step as i32),
             &mut y,
             h,
             &g,
@@ -997,7 +999,6 @@ pub fn generate_flat(
         );
         prev = i as i32;
     }
-
     let p = *result.last().unwrap();
     result.push(Vector3::new(p.x(), p.y(), materialHeight + 1.0));
     result.push(Vector3::new(start.0, start.1, start.2));

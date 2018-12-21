@@ -425,7 +425,7 @@ fn main() {
         ..Default::default()
     };
 
-    let depSize = 1872;
+    let depSize = 1908;
     let depth = glium::texture::Texture2d::empty(&display, depSize, depSize).unwrap();
     let depthBuf =
         glium::texture::depth_texture2d::DepthTexture2d::empty(&display, depSize, depSize).unwrap();
@@ -533,12 +533,12 @@ fn main() {
 
             let ground2 = groundRect(&display, 10.0f32, 0.0);
             drawParams.ground = ground2;
-            drawParams.toolRadius = -0.6;
+            drawParams.toolRadius = -0.65;
 
             let viewMat = Matrix4::Translation(0.0, 0.0, 5.0) * Matrix4::RotationX(-3.14 / 2.0);
             let viewMat = viewMat.Transposed();
             //let perspectiveMat = drawParams.camera.GetProjectionMatrix().Transposed();
-            let side = 7.8;
+            let side = 7.95;
             let perspectiveMat = Matrix4::<f32>::Ortho(-side, side, -side, side).Transposed();
             render(&mut fb, &drawParams, &viewMat, &perspectiveMat);
 
@@ -567,7 +567,9 @@ fn main() {
             );
 
             points_to_file(&flat, "/home/adam/paths/r2.f12");
-
+            //SaveTextureToFile(depth.read(), "/home/adam/depth.png");
+            drawParams.l2 = Option::Some(LineFromPoints( flat.iter(), &display));
+/*
             drawParams.toolRadius = -0.5;
             render(&mut fb, &drawParams, &viewMat, &perspectiveMat);
             fb2.draw(
@@ -591,7 +593,7 @@ fn main() {
                 depth.read(),
             );
 
-            drawParams.l2 = Option::Some(LineFromPoints( flat_contour.iter(), &display));
+            //drawParams.l2 = Option::Some(LineFromPoints( flat_contour.iter(), &display));
             points_to_file(&flat_contour, "/home/adam/paths/r3.f10");
 
             drawParams.toolRadius = -0.4;
@@ -622,8 +624,9 @@ fn main() {
 
             points_to_file(&details, "/home/adam/paths/r4.k08");
             println!("generated {} points", details.len());
-            drawParams.l2 = Option::Some(LineFromPoints(details.iter(), &display));
+            //drawParams.l2 = Option::Some(LineFromPoints(details.iter(), &display));
 
+            */
             //SaveTextureToFile(depth.read(), "/home/adam/depth.png");
 
             //println!("saving");
