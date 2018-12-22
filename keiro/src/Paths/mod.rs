@@ -187,14 +187,17 @@ fn generate_bool_map(
 
             if (from[0] - to[0]).abs() > 0.8 {
                 let i = 0i32;
+                let i2 = uRes-1;
                 let h = (from[1] + to[1]) / 2.0 -0.5;
                 let ph = h / (v as f32) * vRes as f32;
                 //println!("-----from: {}, to: {}, up to: {}", pfu, ptu, ph);
                 for j in 0..vRes {
                     if (j as f32) < ph {
                         set(i, j, if !up { 1 } else { -1 });
+                        set(i2, j, if !up { 1 } else { -1 });
                     } else {
                         set(i, j, if !up { -1 } else { 1 });
+                        set(i2, j, if !up { -1 } else { 1 });
                     }
                 }
                 continue;
@@ -701,6 +704,25 @@ pub fn generate_details(
     ptss
 }
 
+fn parallel_contour(pts: &[Vector3<f32>], ind: impl Iterator<Item = i32>, rad: f32){
+    let mut result :Vec<Vector3<f32>>= vec![];
+
+    let mut prev = None;
+
+    for i in ind {
+        match prev {
+            None => {
+                prev = Some(pts[i as usize]);
+            },
+            Some(pt) => {
+
+            }
+
+        }
+
+    }
+}
+
 pub fn generate_contour(
     l: f32,
     r: f32,
@@ -710,8 +732,11 @@ pub fn generate_contour(
     materialHeight: f32,
     toolRadius: f32,
     start: (f32, f32, f32),
-    map: glium::texture::RawImage2d<u8>,
+    cuts: &Data::Scene,
+    scene: &Data::Scene
+ //   map: glium::texture::RawImage2d<u8>,
 ) -> Vec<Vector3<f32>> {
+    /*
     let width = map.width as i32;
     let height = map.height as i32;
     let image = map.data.into_owned();
@@ -731,186 +756,160 @@ pub fn generate_contour(
 
     let g2 = |px: i32, py: i32| data[(px * width + py) as usize];
     let h = g(0, 0); // to jest docelowa wartosc wszedzie gdzie wchodzimy
-
+*/
+    let gatling = &scene.surfaces[0];
+    let body = &scene.surfaces[1];
+    let cockpit = &scene.surfaces[2];
+    let wings = &scene.surfaces[3];
     let mut result = vec![];
 
-    result.push(Vector3::new(start.0, start.1, start.2));
+    let wingsBack = &cuts.curves[1];
+    let wingsFront = &cuts.curves[3];
+    let gatlingCut = &cuts.curves[4];
+    let hullBack = &cuts.curves[6];
+    let hullFront = &cuts.curves[8];
 
-    let mut x: i32 = 35;
-    let mut y: i32 = (height as f32 * 0.9) as i32;
+    result.push(Vector3::new(start.0, start.2, start.1));
+    result.push(Vector3::new(-8.0, 5.0, 5.5));
+    result.push(Vector3::new(-8.0, 0.0, 5.5));
 
-    result.push(Vector3::new(xToWorld(x), yToWorld(y), materialHeight + 0.1));
-    result.push(Vector3::new(xToWorld(x), yToWorld(y), floorOffset));
+    let get = |surf: &Data::Surface, u, v, rad| {
+        
+        let p = surf.evaluate(u as f32, v as f32 - 0.5);
+        let p = Vector3::new(p.x(), 0.0, p.z());
+        let n = surf.normal(u as f32, v as f32 - 0.5);
+        let n = Vector3::new(n.x(), 0.0, n.z()).normalized() * rad;
 
-    let mut up = false;
-    let step = 1875;
-    move_tool(
-        &mut result,
-        x,
-        -1,
-        &mut y,
-        h,
-        &g,
-        floorOffset,
-        &mut up,
-        &yToWorld,
-        &xToWorld,
-        height,
-        width,
-        step,
-        false,
-    );
-    x += step as i32;
-    /*
+        p+n
+    };
 
-    let step = 500;
-    up = false;
-    move_tool(
-        &mut result,
-        y,
-        100000,
-        &mut x,
-        h,
-        &g2,
-        floorOffset,
-        &mut up,
-        &xToWorld,
-        &yToWorld,
-        width,
-        height,
-        step,
-        true,
-    );
-    y -= step as i32;
 
-    let step = 550;
-    up = true;
-    move_tool(
-        &mut result,
-        x,
-        1000000,
-        &mut y,
-        h,
-        &g,
-        floorOffset,
-        &mut up,
-        &yToWorld,
-        &xToWorld,
-        height,
-        width,
-        step,
-        false,
-    );
-    x -= step as i32;
+    for elem in wingsBack.iter().skip(25) {
 
-    let step = 764;
-    up = false;
-    move_tool(
-        &mut result,
-        y,
-        100000,
-        &mut x,
-        h,
-        &g2,
-        floorOffset,
-        &mut up,
-        &xToWorld,
-        &yToWorld,
-        width,
-        height,
-        step,
-        true,
-    );
-    y -= step as i32;
+        result.push(get(wings, elem[0], elem[1], toolRadius));
+    }
 
-    let step = 300;
-    up = true;
-    move_tool(
-        &mut result,
-        x,
-        1000000,
-        &mut y,
-        h,
-        &g,
-        floorOffset,
-        &mut up,
-        &yToWorld,
-        &xToWorld,
-        height,
-        width,
-        step,
-        false,
-    );
-    x -= step as i32;
+    let p = result.last().unwrap().clone();
+    let pp = result[result.len()-2].clone();
+    result.push(p + (p-pp).normalized());
 
-    let step = 750;
-    up = true;
-    move_tool(
-        &mut result,
-        y,
-        -1,
-        &mut x,
-        h,
-        &g2,
-        floorOffset,
-        &mut up,
-        &xToWorld,
-        &yToWorld,
-        width,
-        height,
-        step,
-        true,
-    );
-    y += step as i32;
+    for elem in wingsFront.iter().take(386) {
+        result.push(get(wings, elem[0], elem[1], toolRadius));
+    }
+    let p = result.last().unwrap().clone();
+    let pp = result[result.len()-2].clone();
+    result.push(p + (p-pp).normalized()*0.5);
 
-    let step = 460;
-    up = true;
-    move_tool(
-        &mut result,
-        x,
-        1000000,
-        &mut y,
-        h,
-        &g,
-        floorOffset,
-        &mut up,
-        &yToWorld,
-        &xToWorld,
-        height,
-        width,
-        step,
-        false,
-    );
-    x -= step as i32;
+    for elem in wingsFront.iter().skip(440).take(140) {
+        result.push(get(wings, elem[0], elem[1], toolRadius));
+    }
 
-    let step = 460;
-    up = true;
-    move_tool(
-        &mut result,
-        y,
-        -1,
-        &mut x,
-        h,
-        &g2,
-        floorOffset,
-        &mut up,
-        &xToWorld,
-        &yToWorld,
-        width,
-        height,
-        step,
-        true,
-    );
-    y += step as i32;
-    */
 
-    result.push(Vector3::new(
-        xToWorld(25),
-        yToWorld((height as f32 * 0.9f32) as i32),
-        materialHeight + 0.1,
-    ));
-    result.push(Vector3::new(start.0, start.1, start.2));
-    result
+    let mut rr = vec![];
+    for elem in gatlingCut.iter().rev().skip(40).take(70) {
+        rr.push(get(gatling, elem[0], elem[1], toolRadius));
+    }
+    result.extend(rr.iter().rev());
+    drop(rr);
+
+    let p = result.last().unwrap().clone();
+    let pp = result[result.len()-2].clone();
+    result.push(p + (p-pp).normalized()*0.6);
+
+
+    let mut rr = vec![];
+    for elem in gatlingCut.iter().take(10) {
+        rr.push(get(gatling, elem[0], elem[1], toolRadius));
+    }
+
+    let p = rr[0].clone();
+    let pp = rr[1].clone();
+
+    result.push(p + (p-pp).normalized()*0.6);
+    result.extend(rr.iter().rev());
+    drop(rr);
+
+    for elem in wingsFront.iter().skip(720).take(200) {
+        result.push(get(wings, elem[0], elem[1], toolRadius));
+    }
+
+    let mut rr = vec![];
+
+    for elem in hullBack.iter().take(485) {
+        rr.push(get(body, elem[0], elem[1], toolRadius));
+    }
+
+    result.extend(rr.iter().rev());
+    drop(rr);
+    let p = result.last().unwrap().clone();
+    let pp = result[result.len()-2].clone();
+    result.push(p + (p-pp).normalized()*0.5);
+
+    for elem in hullFront.iter().rev() {
+        result.push(get(body, elem[0], elem[1], toolRadius));
+    }
+    let p = result.last().unwrap().clone();
+    let pp = result[result.len()-2].clone();
+    result.push(p + (p-pp).normalized()*0.4);
+
+    for elem in hullBack.iter().rev().take(540) {
+        result.push(get(body, elem[0], elem[1], toolRadius));
+    }
+
+    for elem in wingsFront.iter().skip(1280).take(500) {
+        result.push(get(wings, elem[0], elem[1], toolRadius));
+    }
+    let p = result.last().unwrap().clone();
+    let pp = result[result.len()-2].clone();
+    result.push(p + (p-pp).normalized()*0.4);
+
+    let mut rr = vec![];
+    for elem in (50..92) {
+        rr.push(get(wings, elem as f32 / 100.0 * wings.u as f32, wings.v as f32 - 0.01, toolRadius));
+    }
+    result.extend(rr.iter().rev());
+    drop(rr);
+
+    let p = result.last().unwrap().clone();
+    let pp = result[result.len()-2].clone();
+    result.push(p + (p-pp).normalized()*0.4);
+
+    let lst = result.last().unwrap().clone();
+    result.push(Vector3::new(lst.x(), 5.0, lst.z()));
+
+    let flag = true;
+
+    for elem in &mut result {
+        let tmp = *elem;
+        if flag {
+        *elem = Vector3::new(
+            tmp.x(),
+            tmp.z(),
+            //f32::max(floorOffset + tmp.y(), floorOffset),
+            floorOffset+tmp.y(),
+        );
+        } else {
+        *elem = Vector3::new(tmp.x(), tmp.y(), tmp.z());
+        }
+    }
+
+    let mut prev = result.first().unwrap().clone(); 
+    let last = result.last().unwrap().clone();
+
+    let mut ptss = vec![];
+    ptss.push(prev);
+    for pt in result{
+        if (pt-prev).len_squared() > 0.01 {
+            prev = pt;
+            ptss.push(pt);
+        }
+
+    }
+
+
+    ptss.push(last);
+    ptss.push(Vector3::new(start.0, start.1, start.2));
+    ptss
 }
 
 pub fn generate_flat(

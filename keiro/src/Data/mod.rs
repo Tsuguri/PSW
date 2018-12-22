@@ -181,19 +181,19 @@ fn TransformSurface(surface: &InternalSurface, pts: &Pts) -> Surface {
 
 #[derive(Serialize, Deserialize, Debug)]
 struct Pts {
-    #[serde(rename = "Point")]
+    #[serde(rename = "Point", default)]
     pts: Vec<Point>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 struct Surfaces {
-    #[serde(rename = "BezierSurfaceC2")]
+    #[serde(rename = "BezierSurfaceC2", default)]
     surfaces: Vec<InternalSurface>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 struct Curves {
-    #[serde(rename = "CuttingCurve")]
+    #[serde(rename = "CuttingCurve", default)]
     curves: Vec<InternalCurve>,
 }
 
@@ -375,6 +375,14 @@ impl Surface {
         let du = u.fract();
         let dv = v.fract();
         self.patches[pu * self.v as usize + pv].evaluate(du, dv)
+    }
+
+    pub fn normal(&self, u: f32, v: f32) -> Vector3<f32> {
+        let pu = u.trunc() as usize;
+        let pv = v.trunc() as usize;
+        let du = u.fract();
+        let dv = v.fract();
+        self.patches[pu * self.v as usize + pv].normal(du, dv)
     }
 
     pub fn eval_dist(&self, u: f32, v: f32, dist: f32) -> Vector3<f32> {
