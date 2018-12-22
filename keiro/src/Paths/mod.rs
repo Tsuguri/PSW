@@ -939,7 +939,7 @@ pub fn generate_flat(
     let yToWorld = |y: i32| ((y as f32) / (height as f32 - 1.0) * 1.06 - 0.03) * sceneLength + b;
 
     let rows = ((r - l) / (1.8 * toolRadius)).ceil() as u32;
-    let step = (map.width as f32 / rows as f32).floor() as u32-4;
+    let step = (map.width as f32 / rows as f32).floor() as u32-9;
 
     println!("will make {} rows with step {}", rows, step);
 

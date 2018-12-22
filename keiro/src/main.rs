@@ -493,6 +493,7 @@ fn main() {
             //SaveTextureToFile(display.read_front_buffer(), "/home/adam/tmp.png");
 
             println!("rendering");
+
             let viewMat = Matrix4::Translation(0.0, 0.0, 5.0) * Matrix4::RotationX(-3.14 / 2.0);
             let viewMat = viewMat.Transposed();
             //let perspectiveMat = drawParams.camera.GetProjectionMatrix().Transposed();
@@ -500,7 +501,6 @@ fn main() {
             drawParams.toolRadius = -0.9;
             drawParams.ground = groundRect(&display, 7.9f32, 0.9);
 
-            /*
             render(&mut fb, &drawParams, &viewMat, &perspectiveMat);
 
             fb2.draw(
@@ -573,20 +573,6 @@ fn main() {
             //SaveTextureToFile(depth.read(), "/home/adam/depth.png");
             //drawParams.l2 = Option::Some(LineFromPoints( flat.iter(), &display));
             //
-            */
-            let ground2 = groundRect(&display, 10.0f32, 0.0);
-            drawParams.ground = ground2;
-            drawParams.toolRadius = -0.0;
-            render(&mut fb, &drawParams, &viewMat, &perspectiveMat);
-            fb2.draw(
-                rect2.GetVertices(),
-                rect2.GetIndices(),
-                &rectProgram,
-                &uniform!(texSampler: depthBuf.sampled()),
-                &glium::DrawParameters {
-                    ..Default::default()
-                },
-            ).unwrap();
             let flat_contour = generate_contour(
                 -7.5,
                 7.5,
@@ -598,13 +584,11 @@ fn main() {
                 (0.0, 0.0, 6.0),
                 &floorIntersectionsData,
                 &sceneData,
-                //depth.read(),
             );
 
-            drawParams.l2 = Option::Some(LineFromPoints( flat_contour.iter(), &display));
+            //drawParams.l2 = Option::Some(LineFromPoints( flat_contour.iter(), &display));
             points_to_file(&flat_contour, "/home/adam/paths/r3.f10");
 
-            /*
             drawParams.toolRadius = -0.4;
             drawParams.ground = groundRect(&display, 7.9f32, -drawParams.toolRadius);
 
@@ -633,7 +617,6 @@ fn main() {
 
             points_to_file(&details, "/home/adam/paths/r4.k08");
             println!("generated {} points", details.len());
-            */
             //drawParams.l2 = Option::Some(LineFromPoints(details.iter(), &display));
 
             //SaveTextureToFile(depth.read(), "/home/adam/depth.png");
