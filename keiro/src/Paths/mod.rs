@@ -146,6 +146,13 @@ fn move_tool(
     result.extend(ptss);
 }
 
+enum FilterMode {
+    Equal,
+    NotEqual,
+    Less,
+    More
+}
+
 fn generate_bool_map(
     uRes: i32,
     vRes: i32,
@@ -153,7 +160,8 @@ fn generate_bool_map(
     u: u32,
     v: u32,
     path: &[Vector2<f32>],
-    inv: Option<bool>,
+    inv: FilterMode,
+    mv: f32
 ) -> Vec<i32>{
     if (uRes * vRes) as usize != result.len() {
         panic!("wut!");
@@ -188,7 +196,7 @@ fn generate_bool_map(
             if (from[0] - to[0]).abs() > 0.8 {
                 let i = 0i32;
                 let i2 = uRes-1;
-                let h = (from[1] + to[1]) / 2.0 -0.5;
+                let h = ((from[1] + to[1]) / 2.0)/(v+1) as f32*v as f32;
                 let ph = h / (v as f32) * vRes as f32;
                 //println!("-----from: {}, to: {}, up to: {}", pfu, ptu, ph);
                 for j in 0..vRes {
@@ -209,7 +217,7 @@ fn generate_bool_map(
             for i in (f..t) {
                 let ru = (i as f32) / (uRes as f32) * (u as f32);
                 let inter = (ru - from[0]) / (to[0] - from[0]);
-                let rv = (to[1] - from[1]) * inter + from[1] - 0.5;
+                let rv = (to[1] - from[1]) * inter + (from[1]-mv) / (v+1) as f32 * v as f32;
                 let pv = rv / (v as f32) * vRes as f32;
                 for j in 0..vRes {
                     if (j as f32) < pv {
@@ -234,14 +242,13 @@ fn generate_bool_map(
     data
 }
 
-fn select(inv: Option<bool>) -> Box<Fn(i32) -> bool> {
+fn select(inv: FilterMode) -> Box<Fn(i32) -> bool> {
 
     match inv {
-        Option::None => Box::new(|x| x==0),
-        Option::Some(f) => match f {
-            true => Box::new(|x| x>0),
-            false => Box::new(|x| x<0),
-        }
+        FilterMode::Less => Box::new(|x| x<0),
+        FilterMode::More => Box::new(|x|x>0),
+        FilterMode::Equal => Box::new(|x| x==0),
+        FilterMode::NotEqual => Box::new(|x| x!=0),
     }
 }
 
@@ -333,7 +340,8 @@ fn generate_gatling_details(
         gatling.u,
         gatling.v,
         gatling_wing,
-        Some(true),
+        FilterMode::More,
+        0.0
     );
 
     generate_generic_details(
@@ -366,7 +374,8 @@ fn generate_cockpit_details(
         cockpit.u,
         cockpit.v,
         from_cockpit,
-        None,
+        FilterMode::Equal,
+        0.2
     );
 
     generate_generic_details(
@@ -375,8 +384,8 @@ fn generate_cockpit_details(
         vRes,
         &map,
         toolRadius,
-        ((uRes * 3 / 4)..uRes).chain(0..uRes / 4),
-        3,
+        ((uRes * 2/3)..uRes).chain(0..uRes / 3),
+        0,
         vRes / 2,
         0.5,
     )
@@ -392,8 +401,8 @@ fn generate_fin_details(
 
     let mut map = vec![true; (uRes * vRes) as usize];
 
-    generate_bool_map(uRes, vRes, &mut map, cockpit.u, cockpit.v, constraints[0], Some(false));
-    generate_bool_map(uRes, vRes, &mut map, cockpit.u, cockpit.v, constraints[1], Some(false));
+    generate_bool_map(uRes, vRes, &mut map, cockpit.u, cockpit.v, constraints[0], FilterMode::NotEqual, -0.4);
+    generate_bool_map(uRes, vRes, &mut map, cockpit.u, cockpit.v, constraints[1], FilterMode::Less, 0.0);
 
     generate_generic_details(
         cockpit,
@@ -420,10 +429,12 @@ fn generate_left_wing_details(
 
 
     generate_height_map(&mut map, uRes, vRes, wing, toolRadius);
-    for constr in constraints.iter() {
-
-        let dat = generate_bool_map(uRes, vRes, &mut map, wing.u, wing.v, constr, Some(false));
-    }
+    // gatling
+    generate_bool_map(uRes, vRes, &mut map, wing.u, wing.v, constraints[0], FilterMode::Less, 0.3);
+    // hull
+    generate_bool_map(uRes, vRes, &mut map, wing.u, wing.v, constraints[1], FilterMode::Less, 0.15);
+    // fin
+    generate_bool_map(uRes, vRes, &mut map, wing.u, wing.v, constraints[2], FilterMode::Less, 0.1);
     generate_generic_details(wing, uRes, vRes, &map, toolRadius, ((uRes/2-5)..uRes), 0, vRes/2, 0.5)
 }
 
@@ -439,10 +450,10 @@ fn generate_right_wing_details(
 
 
     generate_height_map(&mut map, uRes, vRes, wing, toolRadius);
-    for constr in constraints.iter() {
-
-        let dat = generate_bool_map(uRes, vRes, &mut map, wing.u, wing.v, constr, Some(false));
-    }
+    // hull
+    generate_bool_map(uRes, vRes, &mut map, wing.u, wing.v, constraints[0], FilterMode::Less, -0.05);
+    // fin
+    generate_bool_map(uRes, vRes, &mut map, wing.u, wing.v, constraints[1], FilterMode::Less, -0.1);
     generate_generic_details(wing, uRes, vRes, &map, toolRadius, ((uRes/2-5)..uRes), vRes/2, vRes, 0.4)
 }
 
@@ -458,9 +469,12 @@ fn generate_hull_details(
 
     generate_height_map(&mut map, uRes, vRes, hull, toolRadius);
 
-    for constr in constraints.iter() {
-        generate_bool_map(uRes, vRes, &mut map, hull.u, hull.v, constr, Some(true));
-    }
+    // fin?
+    generate_bool_map(uRes, vRes, &mut map, hull.u, hull.v, constraints[0], FilterMode::More, 0.0);
+    // cockpit
+    generate_bool_map(uRes, vRes, &mut map, hull.u, hull.v, constraints[1], FilterMode::More, 0.12);
+    // wings
+    generate_bool_map(uRes, vRes, &mut map, hull.u, hull.v, constraints[2], FilterMode::More, -0.1);
     generate_generic_details(
         hull,
         uRes,
@@ -551,8 +565,6 @@ pub fn generate_details(
     result.push(Vector3::new(1.0, 5.0, 8.0));
     result.push(Vector3::new(1.0, floorOffset + 0.5, 8.0));
     // curve: 5 albo 6
-
-    
     result.extend(generate_left_wing_details(
         wings,
         [&d.curves[1], &d.curves[3], &d.curves[9]],
@@ -578,8 +590,8 @@ pub fn generate_details(
     let lst = result.last().unwrap().clone();
     result.push(Vector3::new(lst.x(), 5.0, lst.z()));
 
-    result.push(Vector3::new(-2.0, 5.0, -6.0));
-    result.push(Vector3::new(-2.0, 0.5, -6.0));
+    result.push(Vector3::new(-2.0, 5.0, 0.0));
+    result.push(Vector3::new(-2.0, 0.5, 0.0));
 
     result.extend(generate_hull_details(body, [&d.curves[6], &d.curves[4], &d.curves[2]],toolRadius));
 
@@ -668,6 +680,28 @@ pub fn generate_details(
         result.push(wings.eval_dist(cur[pt][0], cur[pt][1]-0.5, toolRadius));
     }
 
+    /*
+    for u in 0..100 {
+        for v in 0..100 {
+            result.push(wings.evaluate(u as f32 / 100.0 * wings.u as f32, v as f32 / 100.0 * wings.v as f32));
+        }
+    }
+
+    // 1, 3 i 9
+    //
+    for elem in &d.curves[1] {
+            result.push(wings.evaluate(elem[0], elem[1] / (wings.v as f32 + 1.0)*wings.v as f32));
+    }
+
+    for elem in &d.curves[3] {
+            result.push(wings.evaluate(elem[0], elem[1] / (wings.v as f32 + 1.0)*wings.v as f32));
+    }
+
+    for elem in &d.curves[9] {
+            result.push(wings.evaluate(elem[0], elem[1] / (wings.v as f32 + 1.0)*wings.v as f32));
+    }
+    */
+
     let lst = result.last().unwrap().clone();
     result.push(Vector3::new(lst.x(), 5.0, lst.z()));
 
@@ -734,29 +768,8 @@ pub fn generate_contour(
     start: (f32, f32, f32),
     cuts: &Data::Scene,
     scene: &Data::Scene
- //   map: glium::texture::RawImage2d<u8>,
 ) -> Vec<Vector3<f32>> {
-    /*
-    let width = map.width as i32;
-    let height = map.height as i32;
-    let image = map.data.into_owned();
-    let data: Vec<u8> = image.into_iter().step_by(4).collect();
-    let data: Vec<f32> = data
-        .iter()
-        .map(|x| (1.0 - (*x as f32) / 255.0) * 10.0)
-        .collect();
-    let sceneWidth = r - l;
-    let sceneLength = u - b;
 
-    let xToWorld = |x: i32| ((x as f32) / (width as f32 - 1.0) * 1.06 - 0.03) * sceneWidth + l;
-
-    let yToWorld = |y: i32| ((y as f32) / (height as f32 - 1.0) * 1.06 - 0.03) * sceneLength + b;
-    let mut y: i32 = 0;
-    let g = |px: i32, py: i32| data[(py * width + px) as usize];
-
-    let g2 = |px: i32, py: i32| data[(px * width + py) as usize];
-    let h = g(0, 0); // to jest docelowa wartosc wszedzie gdzie wchodzimy
-*/
     let gatling = &scene.surfaces[0];
     let body = &scene.surfaces[1];
     let cockpit = &scene.surfaces[2];
@@ -775,9 +788,9 @@ pub fn generate_contour(
 
     let get = |surf: &Data::Surface, u, v, rad| {
         
-        let p = surf.evaluate(u as f32, v as f32 - 0.5);
+        let p = surf.evaluate(u as f32, v as f32-0.5);
         let p = Vector3::new(p.x(), 0.0, p.z());
-        let n = surf.normal(u as f32, v as f32 - 0.5);
+        let n = surf.normal(u as f32, v as f32-0.5);
         let n = Vector3::new(n.x(), 0.0, n.z()).normalized() * rad;
 
         p+n
