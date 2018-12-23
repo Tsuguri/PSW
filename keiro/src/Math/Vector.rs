@@ -61,6 +61,15 @@ where
         &self.content[index]
     }
 }
+
+impl<T> IndexMut<usize> for Vector2<T>
+where
+T: VecElem,
+{
+    fn index_mut<'a>(&mut self, index: usize) -> &mut T {
+        &mut self.content[index]
+    }
+}
 impl<T> IndexMut<usize> for Vector4<T>
 where
     T: Copy + Add<Output = T> + Mul<Output = T>,
@@ -125,6 +134,7 @@ impl<T: Copy + Add<Output = T> + Mul<Output = T> + Sub<Output = T> + Div<Output 
     VecElem for T
 {}
 
+#[derive(Copy, Clone, Debug)]
 pub struct Vector2<T>
 where
     T: VecElem,

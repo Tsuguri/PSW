@@ -607,7 +607,7 @@ fn main() {
                 7.5,
                 2.0,
                 5.0,
-                -drawParams.toolRadius,
+                0.4,
                 (0.0, 0.0, 6.0),
                 depth.read(),
                 &sceneData,

@@ -173,10 +173,12 @@ fn generate_bool_map(
         let mut set = |x: i32, y: i32, val: i32| {
             data[(x * vRes + y) as usize] += val;
         };
+        let mut p = path.to_vec();
+        p.push(path[0]);
 
-        for i in 0..(path.len() - 1) {
-            let from = &path[i];
-            let to = &path[i + 1];
+        for i in 0..(p.len() - 1) {
+            let from = p[i].clone();
+            let to = p[i + 1].clone();
 
             let up = from[0] > to[0];
 
@@ -679,28 +681,74 @@ pub fn generate_details(
     for pt in (len*2/100)..(len*31/100) {
         result.push(wings.eval_dist(cur[pt][0], cur[pt][1]-0.5, toolRadius));
     }
+    let lst = result.last().unwrap().clone();
+    result.push(Vector3::new(lst.x(), 5.0, lst.z()));
 
-    /*
-    for u in 0..100 {
-        for v in 0..100 {
-            result.push(wings.evaluate(u as f32 / 100.0 * wings.u as f32, v as f32 / 100.0 * wings.v as f32));
-        }
+    let get = |surf: &Data::Surface, u, v, rad| {
+        
+        let p = surf.evaluate(u as f32, v as f32-0.5);
+
+        let p2 = surf.evaluate(u as f32-0.05, v as f32-0.5);
+        let p3 = surf.evaluate(u as f32+0.05, v as f32-0.5);
+
+        let p4 = surf.evaluate(u as f32, v as f32-0.55);
+        let p5 = surf.evaluate(u as f32, v as f32-0.45);
+
+        let du = (p3-p2)* 10.0;
+        let dv = (p5-p4)* 10.0;
+
+        let n = Vector3::<f32>::cross(&du,&dv).normalized() * rad;
+        //let n = (( p3 + p2 - p*2.0)*0.5).normalized()*rad;
+
+       let g =  p+n;
+
+       g
+    };
+
+    let mut rr = vec![];
+    let u = cockpit.u as f32 - 1.0;
+    for i in 140..190 {
+        //result.push(cockpit.evaluate(u, i as f32 / 100.0 * cockpit.v as f32));
+        let g = get(cockpit, u, i as f32 / 200.0 * cockpit.v as f32, toolRadius);
+        rr.push(Vector3::new(0.0, g.y(), g.z()));
     }
 
-    // 1, 3 i 9
-    //
-    for elem in &d.curves[1] {
-            result.push(wings.evaluate(elem[0], elem[1] / (wings.v as f32 + 1.0)*wings.v as f32));
-    }
+    let f = rr[0];
+    result.push(Vector3::new(f.x(), 5.0, f.z()-0.5));
+    result.push(Vector3::new(f.x(), f.y(), f.z()-0.5));
 
-    for elem in &d.curves[3] {
-            result.push(wings.evaluate(elem[0], elem[1] / (wings.v as f32 + 1.0)*wings.v as f32));
-    }
+    result.extend(rr.iter());
+    drop(rr);
 
-    for elem in &d.curves[9] {
-            result.push(wings.evaluate(elem[0], elem[1] / (wings.v as f32 + 1.0)*wings.v as f32));
+    let lst = result.last().unwrap().clone();
+    result.push(Vector3::new(lst.x(), 5.0, lst.z()));
+
+    let mut rr = vec![];
+    let v = wings.v as f32 - 3.5;
+    for i in 130..150 {
+        let g = get(wings, i as f32 / 200.0 * wings.u as f32, v, toolRadius);
+        rr.push(g);
     }
-    */
+    let f = rr[0];
+    result.push(Vector3::new(f.x(), 5.0, f.z()+0.5));
+    result.push(Vector3::new(f.x(), f.y(), f.z()+0.5));
+
+    result.extend(rr.iter());
+
+    let lst = result.last().unwrap().clone();
+    result.push(Vector3::new(lst.x(), 5.0, lst.z()));
+
+    let mut rr = vec![];
+    let v = 4.0;
+    for i in (135..198).chain(2..25) {
+        let g = get(body, i as f32 / 200.0 * body.u as f32, v, toolRadius);
+        rr.push(g);
+    }
+    let f = rr[0];
+    result.push(Vector3::new(f.x()+0.5, 5.0, f.z()));
+    result.push(Vector3::new(f.x()+0.5, toolRadius+0.01, f.z()));
+
+    result.extend(rr.iter());
 
     let lst = result.last().unwrap().clone();
     result.push(Vector3::new(lst.x(), 5.0, lst.z()));
