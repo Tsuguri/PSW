@@ -153,6 +153,14 @@ enum FilterMode {
     More
 }
 
+fn select_scale(v: f32, mv: f32,scale: bool) -> Box<Fn(f32)->f32>{
+    match scale {
+        true => Box::new(move |x| (x-mv)*v/(v+1.0)),
+        false => Box::new(move |x| x - mv)
+    }
+
+}
+
 fn generate_bool_map(
     uRes: i32,
     vRes: i32,
@@ -161,11 +169,13 @@ fn generate_bool_map(
     v: u32,
     path: &[Vector2<f32>],
     inv: FilterMode,
-    mv: f32
+    mv: f32,
+    scale:bool
 ) -> Vec<i32>{
     if (uRes * vRes) as usize != result.len() {
         panic!("wut!");
     }
+    let sc = select_scale(v as f32,mv, scale);
 
     let mut data = vec![0i32; result.len()];
 
@@ -198,7 +208,7 @@ fn generate_bool_map(
             if (from[0] - to[0]).abs() > 0.8 {
                 let i = 0i32;
                 let i2 = uRes-1;
-                let h = ((from[1] + to[1]) / 2.0)/(v+1) as f32*v as f32;
+                let h = sc((from[1] + to[1]) / 2.0);
                 let ph = h / (v as f32) * vRes as f32;
                 //println!("-----from: {}, to: {}, up to: {}", pfu, ptu, ph);
                 for j in 0..vRes {
@@ -219,7 +229,7 @@ fn generate_bool_map(
             for i in (f..t) {
                 let ru = (i as f32) / (uRes as f32) * (u as f32);
                 let inter = (ru - from[0]) / (to[0] - from[0]);
-                let rv = (to[1] - from[1]) * inter + (from[1]-mv) / (v+1) as f32 * v as f32;
+                let rv = sc((to[1] - from[1]) * inter + from[1]);
                 let pv = rv / (v as f32) * vRes as f32;
                 for j in 0..vRes {
                     if (j as f32) < pv {
@@ -343,7 +353,8 @@ fn generate_gatling_details(
         gatling.v,
         gatling_wing,
         FilterMode::More,
-        0.0
+        0.0,
+        true
     );
 
     generate_generic_details(
@@ -364,8 +375,8 @@ fn generate_cockpit_details(
     from_cockpit: &[Vector2<f32>],
     toolRadius: f32,
 ) -> Vec<Vector3<f32>> {
-    let uRes: i32 = 60;
-    let vRes: i32 = 120;
+    let uRes: i32 = 80;
+    let vRes: i32 = 180;
 
     let mut map = vec![true; (uRes * vRes) as usize];
 
@@ -377,7 +388,8 @@ fn generate_cockpit_details(
         cockpit.v,
         from_cockpit,
         FilterMode::Equal,
-        0.2
+        0.37,
+        true
     );
 
     generate_generic_details(
@@ -403,8 +415,8 @@ fn generate_fin_details(
 
     let mut map = vec![true; (uRes * vRes) as usize];
 
-    generate_bool_map(uRes, vRes, &mut map, cockpit.u, cockpit.v, constraints[0], FilterMode::NotEqual, -0.4);
-    generate_bool_map(uRes, vRes, &mut map, cockpit.u, cockpit.v, constraints[1], FilterMode::Less, 0.0);
+    generate_bool_map(uRes, vRes, &mut map, cockpit.u, cockpit.v, constraints[0], FilterMode::NotEqual, -0.4,true);
+    generate_bool_map(uRes, vRes, &mut map, cockpit.u, cockpit.v, constraints[1], FilterMode::Less, 0.0, true);
 
     generate_generic_details(
         cockpit,
@@ -432,11 +444,11 @@ fn generate_left_wing_details(
 
     generate_height_map(&mut map, uRes, vRes, wing, toolRadius);
     // gatling
-    generate_bool_map(uRes, vRes, &mut map, wing.u, wing.v, constraints[0], FilterMode::Less, 0.3);
+    generate_bool_map(uRes, vRes, &mut map, wing.u, wing.v, constraints[0], FilterMode::Less, 0.3, true);
     // hull
-    generate_bool_map(uRes, vRes, &mut map, wing.u, wing.v, constraints[1], FilterMode::Less, 0.15);
+    generate_bool_map(uRes, vRes, &mut map, wing.u, wing.v, constraints[1], FilterMode::Less, 0.1, true);
     // fin
-    generate_bool_map(uRes, vRes, &mut map, wing.u, wing.v, constraints[2], FilterMode::Less, 0.1);
+    generate_bool_map(uRes, vRes, &mut map, wing.u, wing.v, constraints[2], FilterMode::Less, 0.1, true);
     generate_generic_details(wing, uRes, vRes, &map, toolRadius, ((uRes/2-5)..uRes), 0, vRes/2, 0.5)
 }
 
@@ -446,16 +458,16 @@ fn generate_right_wing_details(
     toolRadius: f32,
 ) -> Vec<Vector3<f32>> {
     let uRes: i32 = 120;
-    let vRes: i32 = 180;
+    let vRes: i32 = 220;
 
     let mut map = vec![true; (uRes * vRes) as usize];
 
 
     generate_height_map(&mut map, uRes, vRes, wing, toolRadius);
     // hull
-    generate_bool_map(uRes, vRes, &mut map, wing.u, wing.v, constraints[0], FilterMode::Less, -0.05);
+    generate_bool_map(uRes, vRes, &mut map, wing.u, wing.v, constraints[0], FilterMode::Less, -0.03, true);
     // fin
-    generate_bool_map(uRes, vRes, &mut map, wing.u, wing.v, constraints[1], FilterMode::Less, -0.1);
+    generate_bool_map(uRes, vRes, &mut map, wing.u, wing.v, constraints[1], FilterMode::Less, -0.1, true);
     generate_generic_details(wing, uRes, vRes, &map, toolRadius, ((uRes/2-5)..uRes), vRes/2, vRes, 0.4)
 }
 
@@ -465,18 +477,18 @@ fn generate_hull_details(
     toolRadius: f32,
 ) -> Vec<Vector3<f32>> {
     let uRes: i32 = 100;
-    let vRes: i32 = 180;
+    let vRes: i32 = 220;
 
     let mut map = vec![true; (uRes * vRes) as usize];
 
     generate_height_map(&mut map, uRes, vRes, hull, toolRadius);
 
     // fin?
-    generate_bool_map(uRes, vRes, &mut map, hull.u, hull.v, constraints[0], FilterMode::More, 0.0);
+    generate_bool_map(uRes, vRes, &mut map, hull.u, hull.v, constraints[0], FilterMode::More, 0.0, true);
     // cockpit
-    generate_bool_map(uRes, vRes, &mut map, hull.u, hull.v, constraints[1], FilterMode::More, 0.12);
+    generate_bool_map(uRes, vRes, &mut map, hull.u, hull.v, constraints[1], FilterMode::More, 0.5,false );
     // wings
-    generate_bool_map(uRes, vRes, &mut map, hull.u, hull.v, constraints[2], FilterMode::More, -0.1);
+    generate_bool_map(uRes, vRes, &mut map, hull.u, hull.v, constraints[2], FilterMode::More, -0.1, true);
     generate_generic_details(
         hull,
         uRes,
