@@ -6,13 +6,16 @@
 #include "QQuaternionUtils.hpp"
 
 Simulation::Simulation(QObject* parent) : QObject(parent), running(false), timer(new QTimer(this)), 
-simpleQ1(0), simpleQ2(0), simpleQ3(0), simpleQ4(0), simpleQ5(0), simpleR2(1),
-advancedQ1(0), advancedQ2(0), advancedQ3(0), advancedQ4(0), advancedQ5(0), advancedR2(1)
+    start(), end(), current(), currentAdvanced()
 {
 
   QObject::connect(timer.get(), &QTimer::timeout, this, &Simulation::tick);
   timer->setInterval(static_cast<int>(33));
   time = 0.0;
+
+  r1 = 1;
+  r3 = 1;
+  r4 = 1;
 }
 
 bool Simulation::getRunning() const {
@@ -24,44 +27,44 @@ double Simulation::getAnimationTime() const {
 }
 
 double Simulation::getSimpleQ1() const {
-    return simpleQ1;
+    return current.q1;
 }
 double Simulation::getSimpleQ2() const {
-    return simpleQ2;
+    return current.q2;
 }
 double Simulation::getSimpleQ3() const {
-    return simpleQ3;
+    return current.q3;
 }
 double Simulation::getSimpleQ4() const {
-    return simpleQ4;
+    return current.q4;
 }
 double Simulation::getSimpleQ5() const {
-    return simpleQ5;
+    return current.q5;
 }
 
 double Simulation::getSimpleR2() const {
-    return simpleR2;
+    return current.r2;
 }
 
 
 double Simulation::getAdvancedQ1() const {
-    return simpleQ1;
+    return currentAdvanced.q1;
 }
 double Simulation::getAdvancedQ2() const {
-    return advancedQ2;
+    return currentAdvanced.q2;
 }
 double Simulation::getAdvancedQ3() const {
-    return advancedQ3;
+    return currentAdvanced.q3;
 }
 double Simulation::getAdvancedQ4() const {
-    return advancedQ4;
+    return currentAdvanced.q4;
 }
 double Simulation::getAdvancedQ5() const {
-    return advancedQ5;
+    return currentAdvanced.q5;
 }
 
 double Simulation::getAdvancedR2() const {
-    return advancedR2;
+    return currentAdvanced.r2;
 }
 
 
@@ -141,6 +144,10 @@ void Simulation::toggleRun() {
     if(running){
         timer->stop();
     } else {
+        if(time < 0.0000001){
+            start = computeIK(startPos, startQuat, false, start);
+            end = computeIK(endPos, endQuat, false, start);
+        }
         timer->start();
     }
 
@@ -171,38 +178,6 @@ void Simulation::tick() {
     }
 }
 
-float interpolateAngle(float from, float to, float at){
-    while(from > 360) {
-        from -=360;
-    }
-    while(to> 360) {
-        to-=360;
-    }
-    auto div = to-from;
-    if(std::abs(div)>180){
-        div = div-(div>0 ? 1 : -1)*360;
-    }
-
-    auto change = div*at;
-
-    auto result = from+change;
-    if(result<0){
-        result +=360;
-    }
-    if(result>360){
-        result -=360;
-    }
-
-    return result;
-}
-
-QVector3D interpolateEuler(double at, const QVector3D& from, const QVector3D to){
-    auto x = interpolateAngle(from.x(), to.x(), at);
-    auto y = interpolateAngle(from.y(), to.y(), at);
-    auto z = interpolateAngle(from.z(), to.z(), at);
-
-    return QVector3D(x,y,z);
-}
 
 float dot(const QQuaternion& q1, const QQuaternion& q2) {
     return q1.x()*q2.x() + q1.y()*q2.y() + q1.z()*q2.z() + q1.scalar()*q2.scalar();
@@ -237,15 +212,91 @@ QQuaternion slerpo(double at, const QQuaternion& from, const QQuaternion& to){
     return (s0*from + s1*to2).normalized();
 }
 
+template<typename T>
+T interpolate(T one, T two, double at){
+    return one*(1-at)+two*at;
+}
+
+void Simulation::computeSimpleData(double at){
+    current.q1 = interpolate(start.q1, end.q1, at);
+    current.q2 = interpolate(start.q2, end.q2, at);
+    current.q3 = interpolate(start.q3, end.q3, at);
+    current.q4 = interpolate(start.q4, end.q4, at);
+    current.q5 = interpolate(start.q5, end.q5, at);
+    current.r2 = interpolate(start.r2, end.r2, at);
+}
+
+void Simulation::computeAdvancedData(double at){
+    auto pos = interpolate(startPos, endPos, at);
+    auto rot = slerpo(at, startQuat, endQuat);
+    currentAdvanced = computeIK(pos, rot, true, currentAdvanced);
+}
+
+
+float angle(const QVector3D &v, const QVector3D &w) {
+    auto cross = QVector3D::crossProduct(v, w);
+    auto angle = std::atan2(cross.length(), QVector3D::dotProduct(v, w));
+    return angle;
+}
+
+float angle(const QVector3D &v, const QVector3D &w, const QVector3D &n024) {
+    auto cross = QVector3D::crossProduct(v, w);
+    auto angle = std::atan2(cross.length(), QVector3D::dotProduct(v, w));
+    if (QVector3D::dotProduct(cross, n024) < 0)
+        angle = -angle;
+    return angle;
+}
+Simulation::Data Simulation::computeIK(QVector3D pos, QQuaternion rot, bool preserve, const Simulation::Data& prev){
+    pos.setZ(-pos.z());
+    QVector3D p0(0.0, 0.0, 0.0);
+    QVector3D p1(p0);
+    QVector3D p2 = p1 + r1 * QVector3D(0, 1, 0);
+
+    QVector3D p5(pos);
+
+    QVector3D p4 = p5 - r4 * rot.rotatedVector(QVector3D(1, 0, 0));
+
+    QVector3D n024 = QVector3D::crossProduct(p4 - p0, p2 - p0);
+
+    if (n024.length() < 0.0001f) {
+        n024 = QVector3D(0, 0, 1);
+    }
+    n024 = n024.normalized();
+    QVector3D z4 = QVector3D::crossProduct(rot.rotatedVector(QVector3D(1, 0, 0)), n024).normalized();
+    if (z4.length() < 0.0001f) {
+        z4 = (p2 - p4).normalized();
+    }
+    QVector3D p3 = p4 + r3 * z4;
+    QVector3D p3alt = p4 - r3 * z4;
+    auto rad2Deg = [](double r){
+        return r/M_PI*180.0;
+    };
+/*
+    if (preserve) {
+        if((p3alt - lastP3).lengthSquared() < (p3 - lastP3).lengthSquared())
+            p3 = p3alt;
+    } else {
+        if ((p2 - p3alt).lengthSquared() < (p2 - p3).lengthSquared())
+            p3 = p3alt;
+    }
+*/
+
+    auto d = Data();
+    d.q1 = -90+rad2Deg(std::atan2(p4.z(), p4.x()));
+    d.q2 = rad2Deg(angle(p2 - p0, p3 - p2, n024));
+    d.r2 = (p3 - p2).length();
+    d.q3 = rad2Deg(angle(p3 - p2, p4 - p3, n024));
+    d.q4 = -90+rad2Deg(angle(n024, rot.rotatedVector(QVector3D(1, 0, 0)), p3 - p4));
+    d.q5 = rad2Deg(angle(p3 - p4, rot.rotatedVector(QVector3D(0, 1, 0)), rot.rotatedVector(QVector3D(1, 0, 0))));
+
+    return d;
+}
+
 void Simulation::computeCurrentData(){
     double at = time/animationTime;
-    double mat = 1-at;
 
-    simpleQ1 = 360* at;
-    simpleQ2 = 360* at;
-    simpleQ3 = 360* at;
-    simpleQ4 = 360* at;
-    simpleQ5 = 360* at;
-
+    computeSimpleData(at);
+    computeAdvancedData(at);
     emit simpleStateChanged();
+    emit advancedStateChanged();
 }

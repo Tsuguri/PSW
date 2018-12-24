@@ -97,13 +97,23 @@ signals:
         Q_INVOKABLE void reset();
 
     private:
+        struct Data{
+            Data(): q1(0), q2(0), q3(0), q4(0),q5(0),r2(1){}
+            double q1,q2,q3,q4,q5,r2;
+        };
+
+
         void computeCurrentData();
+        void computeSimpleData(double at);
+        void computeAdvancedData(double at);
+
+        Data computeIK(QVector3D pos, QQuaternion rot, bool preserve, const Data& prev);
 
         void tick();
         double time;
 
-        double simpleQ1, simpleQ2, simpleQ3, simpleQ4, simpleQ5, simpleR2;
-        double advancedQ1, advancedQ2, advancedQ3, advancedQ4, advancedQ5, advancedR2;
+        Data start,end,current;
+        Data currentAdvanced;
 
         QVector3D startPos;
         QVector3D endPos;
@@ -115,6 +125,8 @@ signals:
         //quats
         QQuaternion startQuat;
         QQuaternion endQuat;
+
+        double r1,r3,r4;
 
 
         bool running = false;

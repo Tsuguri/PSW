@@ -8,8 +8,8 @@ Entity {
 
     property real r1: 1.0
     property real r2: 2.0// sterowane przez kinematyke
-    property real r3: 3.0
-    property real r4: 4.0
+    property real r3: 1.0
+    property real r4: 1.0
     property real r5: 1.0
     property real q1: 0.0
     property real q2: 0.0
