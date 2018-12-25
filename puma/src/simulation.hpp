@@ -1,6 +1,7 @@
 #pragma once
 
 #include <memory>
+#include <optional>
 
 #include <QObject>
 #include <QTimer>
@@ -45,6 +46,8 @@ class Simulation : public QObject {
         Q_PROPERTY(QQuaternion startQuat READ getStartQuat WRITE setStartQuat NOTIFY startQuatChanged);
         Q_PROPERTY(QQuaternion endQuat READ getEndQuat WRITE setEndQuat NOTIFY endQuatChanged);
 
+        Q_PROPERTY(QVector3D testPos READ getTest NOTIFY testChanged);
+
         bool getRunning() const;
         double getAnimationTime() const;
 
@@ -62,6 +65,7 @@ class Simulation : public QObject {
         double getAdvancedQ4() const;
         double getAdvancedQ5() const;
 
+        QVector3D getTest() const;
         QVector3D getStartPos() const;
         QVector3D getEndPos() const;
 
@@ -80,6 +84,8 @@ class Simulation : public QObject {
         void setStartQuat(const QQuaternion& quat);
         void setEndQuat(const QQuaternion& quat);
 signals:
+        void testChanged();
+
         void runningChanged();
         void animationTimeChanged();
 
@@ -118,6 +124,8 @@ signals:
         QVector3D startPos;
         QVector3D endPos;
 
+        QVector3D test;
+
         // euler angles
         QVector3D startEuler;
         QVector3D endEuler;
@@ -127,6 +135,8 @@ signals:
         QQuaternion endQuat;
 
         double r1,r3,r4;
+
+        std::optional<QVector3D> prevQ3;
 
 
         bool running = false;

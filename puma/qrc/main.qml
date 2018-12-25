@@ -263,6 +263,10 @@ ApplicationWindow {
                     r2: simulation.simpleR2
 
                 }
+                /*Frame {
+                    layers:[l2]
+                    position: simulation.testPos
+                }*/
 
                 Frame {
                     layers: [l2]

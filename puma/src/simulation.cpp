@@ -246,15 +246,25 @@ float angle(const QVector3D &v, const QVector3D &w, const QVector3D &n024) {
         angle = -angle;
     return angle;
 }
+
+QVector3D Simulation::getTest() const {
+    return test;
+}
+
+
 Simulation::Data Simulation::computeIK(QVector3D pos, QQuaternion rot, bool preserve, const Simulation::Data& prev){
-    pos.setZ(-pos.z());
+
     QVector3D p0(0.0, 0.0, 0.0);
     QVector3D p1(p0);
     QVector3D p2 = p1 + r1 * QVector3D(0, 1, 0);
 
     QVector3D p5(pos);
 
+
+    // wsdłóż blue
     QVector3D p4 = p5 - r4 * rot.rotatedVector(QVector3D(1, 0, 0));
+    test = p4;
+    emit testChanged();
 
     QVector3D n024 = QVector3D::crossProduct(p4 - p0, p2 - p0);
 
@@ -271,22 +281,22 @@ Simulation::Data Simulation::computeIK(QVector3D pos, QQuaternion rot, bool pres
     auto rad2Deg = [](double r){
         return r/M_PI*180.0;
     };
-/*
-    if (preserve) {
-        if((p3alt - lastP3).lengthSquared() < (p3 - lastP3).lengthSquared())
-            p3 = p3alt;
-    } else {
-        if ((p2 - p3alt).lengthSquared() < (p2 - p3).lengthSquared())
-            p3 = p3alt;
+    if(preserve) {
+        if (prevQ3) {
+
+            if((p3alt - *prevQ3).lengthSquared() < (p3 - *prevQ3).lengthSquared()){
+                p3 = p3alt;
+            }
+        } 
+        prevQ3 = p3;
     }
-*/
 
     auto d = Data();
-    d.q1 = -90+rad2Deg(std::atan2(p4.z(), p4.x()));
+    d.q1 = -90-rad2Deg(std::atan2(p4.z(), p4.x()));
     d.q2 = rad2Deg(angle(p2 - p0, p3 - p2, n024));
     d.r2 = (p3 - p2).length();
     d.q3 = rad2Deg(angle(p3 - p2, p4 - p3, n024));
-    d.q4 = -90+rad2Deg(angle(n024, rot.rotatedVector(QVector3D(1, 0, 0)), p3 - p4));
+    d.q4 = 90-rad2Deg(angle(n024, rot.rotatedVector(QVector3D(1, 0, 0)), p3 - p4));
     d.q5 = rad2Deg(angle(p3 - p4, rot.rotatedVector(QVector3D(0, 1, 0)), rot.rotatedVector(QVector3D(1, 0, 0))));
 
     return d;

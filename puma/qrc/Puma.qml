@@ -184,6 +184,7 @@ Entity {
                                         }
 
                                         components: [toolTr, toolMesh, matBlue].concat(puma.layers)
+                                        Frame{}
                                     }
                                 }
                             }
