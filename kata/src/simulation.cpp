@@ -203,13 +203,13 @@ void Simulation::run(CSpaceImageProvider* provi) {
     timer->start();
     frame=0;
 
-    //provi->setCSpaceImage(this);
     //
     std::cout<<"filling"<<std::endl;
     path = BFS(startA1, startA2, endA1, endA2);
     for(const auto& elem : path ) { 
         //std::cout<<std::get<0>(elem)<<" "<<std::get<1>(elem)<<std::endl;
     }
+    provi->setCSpaceImage(this, path);
 }
 
 std::vector<std::pair<int, int>> Simulation::BFS(int a1, int a2, int b1, int b2)
@@ -292,6 +292,17 @@ std::vector<std::pair<int, int>> Simulation::BFS(int a1, int a2, int b1, int b2)
                     visited[dx][dy] = pt;
                     V[dx][dy]=true;
                     kolejka.push_back(std::make_pair(dx, dy));
+
+                }
+
+                for(int i=-1;i<=1;i+=2){
+                    auto dx = (p1+j+360)%360;
+                    auto dy = (p2 + i + 360)%360;
+                    if(!V[dx][dy]) {
+                        visited[dx][dy]=pt;
+                        V[dx][dy]=true;
+                        kolejka.emplace_back(dx,dy);
+                    }
 
                 }
 

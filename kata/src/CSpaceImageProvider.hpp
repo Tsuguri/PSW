@@ -16,6 +16,7 @@ public:
     QImage requestImage(const QString &id, QSize *size, const QSize &requestedSize) override;
 
     void setCSpaceImage(const Simulation* cSpace);
+    void setCSpaceImage(const Simulation* cSpace, const std::vector<std::pair<int,int>>& path);
     void resetCSpaceImage();
 
 signals:
