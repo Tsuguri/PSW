@@ -60,6 +60,8 @@ class Simulation : public QObject {
         Q_INVOKABLE void startSimulation();
         Q_INVOKABLE void clearRects();
 
+        Q_INVOKABLE void addRect(int x1, int y1, int x2, int y2);
+
         Q_INVOKABLE void run(CSpaceImageProvider* provi);
         Q_INVOKABLE void stop();
 
@@ -87,13 +89,14 @@ signals:
         void startChanged();
         void endChanged();
 
+
     private:
         void tick();
         std::vector<std::pair<int, int>> BFS(int a1, int a2, int b1, int b2);
 std::tuple<float, float, float, float> InverseKinematics(int x, int y);
         bool a,b, showOpt;
         float r1,r2;
-        std::vector<int> rects;
+        std::vector<std::tuple<int, int, int, int>> rects;
 
         float a1,a2, startA1, startA2, endA1, endA2;
         float a1a, a2a, a2b, a1b;

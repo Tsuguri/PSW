@@ -57,13 +57,21 @@ ApplicationWindow {
                 SceneSettings {
                     id: settings
 
-                    //l1: simulation.r1
-                    ////l2: simulation.r2
-                    //enabled: visualization.state === "unconfigured"
+                    property bool configuring: true
+                    function changeConfig(){
+                        console.log("changing conf")
+                    }
+
+
                     obstaclesCount: simulation.rects
                     onClearRectangles: simulation.clearRects()
                     onSimulate: {
                         simulation.run(cSpaceImagesProvider)
+                    }
+                    onChangeConf: {
+                        configuring = !configuring
+                        console.log(configuring)
+
                     }
                 }
                 SimulationControl {
@@ -72,9 +80,6 @@ ApplicationWindow {
                         console.log("stupp")
                         simulation.stop();
                     }
-
-
-
                 }
             }
         }
@@ -95,8 +100,6 @@ ApplicationWindow {
                     anchors.fill: parent
                     color: "lightgray"
 
-                    //color: sceneSettings.highlightReachable ? "lightgray" : "white"
-
                     border {
                         width: 2
                     }
@@ -114,16 +117,33 @@ ApplicationWindow {
                         acceptedButtons: Qt.LeftButton | Qt.RightButton
                         hoverEnabled: true
 
-                        onPressed: {
-                            if (mouse.button === Qt.LeftButton) {
-                                var point = mouseArea.mapToItem(sceneRoot, mouse.x, mouse.y)
-                                simulation.placeStart(point.x, point.y);
-                            }
+                        property var pt: 0
 
-                            if(mouse.button === Qt.RightButton) {
-                                var point = mouseArea.mapToItem(sceneRoot, mouse.x, mouse.y)
-                                simulation.placeEnd(point.x, point.y);
-                                console.log("h2h");
+                        onPressed: {
+                            if (settings.configuring){
+                                pt = mouseArea.mapToItem(sceneRoot, mouse.x, mouse.y)
+                            } else{
+                                if (mouse.button === Qt.LeftButton) {
+                                    var point = mouseArea.mapToItem(sceneRoot, mouse.x, mouse.y)
+                                    pt = point
+                                    simulation.placeStart(point.x, point.y);
+                                }
+
+                                if(mouse.button === Qt.RightButton) {
+                                    var point = mouseArea.mapToItem(sceneRoot, mouse.x, mouse.y)
+                                    simulation.placeEnd(point.x, point.y);
+                                }
+                            }
+                        }
+
+                        onReleased: {
+                            if(settings.configuring){
+
+                                if(mouse.button === Qt.LeftButton)
+                                {
+                                    var pt2 = mouseArea.mapToItem(sceneRoot, mouse.x, mouse.y)
+                                    simulation.addRect(pt.x, pt.y, pt2.x, pt2.y);
+                                }
                             }
                         }
 

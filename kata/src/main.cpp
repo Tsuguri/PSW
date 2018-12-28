@@ -13,10 +13,10 @@ int main(int argc, char **argv) {
   qmlRegisterType<Simulation>("Kata", 1, 0, "Simulation");
   //qmlRegisterType<Trace>("Nigari", 1, 0, "Trace");
 
-    CSpaceImageProvider imageProvider;
+    CSpaceImageProvider* imageProvider = new CSpaceImageProvider();
 
-    engine.addImageProvider("cSpaceImagesProvider", &imageProvider);
-    engine.rootContext()->setContextProperty("cSpaceImagesProvider", &imageProvider);
+    engine.addImageProvider("cSpaceImagesProvider", imageProvider);
+    engine.rootContext()->setContextProperty("cSpaceImagesProvider", imageProvider);
 
   engine.load(QUrl("qrc:/main.qml"));
   if (engine.rootObjects().isEmpty())

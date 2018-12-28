@@ -57,8 +57,16 @@ void Simulation::startSimulation() {
 }
 
 void Simulation::clearRects() {
-    std::cout<<"clearing rects"<<std::endl;
+    rects.clear();
+    emit rectsChanged();
 }
+
+void Simulation::addRect(int x1, int y1, int x2, int y2){
+    rects.emplace_back(x1,y2,x2,y2);
+
+    emit rectsChanged();
+}
+
 
 void Simulation::confirmA() {
     if(selectingA) {

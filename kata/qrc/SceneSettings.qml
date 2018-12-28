@@ -9,6 +9,7 @@ GridLayout {
 
     signal clearRectangles()
     signal simulate()
+    signal changeConf()
 
     property bool enabled: true
 
@@ -75,4 +76,11 @@ GridLayout {
         Layout.fillWidth: true
     }
 
+    Button {
+        id: configButton
+        text: qsTr("Configure")
+        onClicked: root.changeConf()
+        enabled: root.enabled
+        Layout.fillWidth: true
+    }
 }
