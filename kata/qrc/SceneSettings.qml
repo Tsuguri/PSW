@@ -61,14 +61,6 @@ GridLayout {
     }
 
     Button {
-        id: clearRectanglesButton
-        text: qsTr("Clear rects")
-        onClicked: root.clearRectangles()
-        enabled: root.enabled
-        Layout.fillWidth: true
-    }
-
-    Button {
         id: simulateButton
         text: qsTr("Simulate")
         onClicked: root.simulate()

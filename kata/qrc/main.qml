@@ -63,7 +63,7 @@ ApplicationWindow {
                     }
 
 
-                    obstaclesCount: simulation.rects
+                    obstaclesCount: simulation.rectangles.length
                     onClearRectangles: simulation.clearRects()
                     onSimulate: {
                         simulation.run(cSpaceImagesProvider)
@@ -156,6 +156,7 @@ ApplicationWindow {
                             x: parent.width / 2
                             y: parent.height / 2
 
+
                             Rectangle {
                                 color: "white"
                                 readonly property real r: simulation.r1+simulation.r2
@@ -173,6 +174,28 @@ ApplicationWindow {
                                 y: -r
                                 width: 2 * r
                                 height: 2 * r
+                            }
+                            Repeater {
+                                model: simulation.rectangles
+                                delegate: Rectangle {
+                                    id: obstacle
+                                    color: "gray"
+
+                                    x: model.x1
+                                    y: model.y1
+
+                                    width: Math.abs(model.x1-model.x2)
+                                    height: Math.abs(model.y1-model.y2)
+
+                                    MouseArea {
+                                        anchors.fill: parent
+                                        enabled:true
+                                        onClicked: {
+                                            simulation.removeRext(index)
+                                        }
+                                    }
+                                }
+
                             }
 
                             Arm {
