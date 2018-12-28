@@ -3,6 +3,7 @@ import Qt3D.Render 2.0
 import Qt3D.Input 2.0
 import Qt3D.Extras 2.0
 
+import Hoken 1.0
 Entity {
     id: puma
 
@@ -184,7 +185,11 @@ Entity {
                                         }
 
                                         components: [toolTr, toolMesh, matBlue].concat(puma.layers)
-                                        Frame{}
+                                        Frame{
+                                            layers: puma.layers
+                                            rotation: Quat.fromEulerAngles(Qt.vector3d(0,90,90))
+
+                                        }
                                     }
                                 }
                             }

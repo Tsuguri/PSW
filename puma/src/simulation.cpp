@@ -254,19 +254,18 @@ QVector3D Simulation::getTest() const {
 
 Simulation::Data Simulation::computeIK(QVector3D pos, QQuaternion rot, bool preserve, const Simulation::Data& prev){
 
-    QVector3D p0(0.0, 0.0, 0.0);
-    QVector3D p1(p0);
+    QVector3D p1(0.0, 0.0, 0.0);
     QVector3D p2 = p1 + r1 * QVector3D(0, 1, 0);
 
     QVector3D p5(pos);
 
 
-    // wsdłóż blue
+    // wzdłóż blue
     QVector3D p4 = p5 - r4 * rot.rotatedVector(QVector3D(1, 0, 0));
     test = p4;
     emit testChanged();
 
-    QVector3D n024 = QVector3D::crossProduct(p4 - p0, p2 - p0);
+    QVector3D n024 = QVector3D::crossProduct(p4 - p1, p2 - p1);
 
     if (n024.length() < 0.0001f) {
         n024 = QVector3D(0, 0, 1);
@@ -293,7 +292,7 @@ Simulation::Data Simulation::computeIK(QVector3D pos, QQuaternion rot, bool pres
 
     auto d = Data();
     d.q1 = -90-rad2Deg(std::atan2(p4.z(), p4.x()));
-    d.q2 = rad2Deg(angle(p2 - p0, p3 - p2, n024));
+    d.q2 = rad2Deg(angle(p2 - p1, p3 - p2, n024));
     d.r2 = (p3 - p2).length();
     d.q3 = rad2Deg(angle(p3 - p2, p4 - p3, n024));
     d.q4 = 90-rad2Deg(angle(n024, rot.rotatedVector(QVector3D(1, 0, 0)), p3 - p4));
