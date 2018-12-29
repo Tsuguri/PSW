@@ -223,11 +223,7 @@ ApplicationWindow {
 
                     NodeInstantiator {
 
-                        model: ParticleModel {
-                            id: particleModel
-                            mass: simulationProperties.mass
-                            bezierBuffer: cubeMaterial.bezierBuffer
-                        }
+                        model: simulator.points
 
                         delegate: Entity {
                             id: particle
@@ -240,22 +236,6 @@ ApplicationWindow {
                             }
 
                             components: [ particleMesh, particleTransform, particleMaterial ]
-                        }
-
-                    }
-
-                    NodeInstantiator {
-
-                       /* model: SpringModel {
-                            id: springModel
-                            particleModel: particleModel
-                            springConstant: simulationProperties.springConstant
-                        }*/
-
-                        delegate: Entity {
-                            id: spring
-
-                            enabled: false
                         }
 
                     }
@@ -318,9 +298,9 @@ ApplicationWindow {
                         id: frameGeometryRenderer
                         primitiveType: GeometryRenderer.Lines
                         geometry: CuboidWireframeGeometry {
-                            xExtent: particleModel.extent
-                            yExtent: particleModel.extent
-                            zExtent: particleModel.extent
+                            xExtent: 15
+                            yExtent: 15
+                            zExtent: 15
                         }
                     }
 
@@ -356,17 +336,17 @@ ApplicationWindow {
                     }
 
                     GeometryRenderer {
-                        id: bezierFrameGeometryRenderer
+                        id: springRenderer 
                         primitiveType: GeometryRenderer.Lines
                         geometry: BezierFrameGeometry {
-                            particleModel: particleModel
+                            simulation: simulator
                         }
                     }
 
                     Entity {
                         id: springs
                         enabled: simulationProperties.showSprings
-                        components: [bezierFrameGeometryRenderer, particleMaterial]
+                        components: [springRenderer, particleMaterial]
                     }
 
 

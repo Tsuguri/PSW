@@ -3,38 +3,42 @@
 
 #include <vector>
 
-#include <Qt3DRender/QGeometry>
 #include <Qt3DRender/QAttribute>
+#include <Qt3DRender/QBuffer>
+#include <Qt3DRender/QGeometry>
 
-#include "ParticleModel.hpp"
+#include "simulation.hpp"
 
 class BezierFrameGeometry : public Qt3DRender::QGeometry {
     Q_OBJECT
 
-    Q_PROPERTY(ParticleModel* particleModel READ getParticleModel WRITE setParticleModel NOTIFY particleModelChanged);
-public:
-    explicit BezierFrameGeometry(Qt3DCore::QNode *parent = nullptr);
+    Q_PROPERTY(
+        Simulation* simulation READ getSimulation WRITE setSimulation NOTIFY simulationChanged);
 
-    ParticleModel* getParticleModel() const { return particleModel; }
+  public:
+    explicit BezierFrameGeometry(Qt3DCore::QNode* parent = nullptr);
 
-    void setParticleModel(ParticleModel* value);
+    Simulation* getSimulation() const {
+        return simulation;
+    }
 
-signals:
-    void particleModelChanged();
-private slots:
-    void modelChanged(const QModelIndex &topLeft, const QModelIndex &bottomRight, const QVector<int> &roles);
-private:
-    ParticleModel* particleModel;
+    void setSimulation(Simulation* value);
+
+  signals:
+    void simulationChanged();
+
+  private:
+    Simulation* simulation;
 
     struct vertex {
         float position[3];
-        float normal[3];
+        // float normal[3];
     };
 
     Qt3DRender::QBuffer *vbo, *ibo;
-    Qt3DRender::QAttribute *positionAttr, *indexAttr, *normalAttr;
+    Qt3DRender::QAttribute *positionAttr, *indexAttr;  //, *normalAttr;
 
     void regenerate();
 };
 
-#endif //PSW_BEZIER_FRAME_GEOMETRY_HPP
+#endif  //PSW_BEZIER_FRAME_GEOMETRY_HPP
