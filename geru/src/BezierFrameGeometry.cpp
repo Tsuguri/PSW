@@ -40,7 +40,7 @@ BezierFrameGeometry::BezierFrameGeometry(Qt3DCore::QNode* parent)
 
     this->addAttribute(positionAttr);
     // this->addAttribute(normalAttr);
-    this->addAttribute(indexAttr);
+    //this->addAttribute(indexAttr);
     regenerate();
 }
 
@@ -50,11 +50,11 @@ void BezierFrameGeometry::setSimulation(Simulation* value) {
         std::cout << "not the same simu" << std::endl;
         if (simulation != nullptr)
             QObject::disconnect(
-                simulation, &Simulation::pointsChanged, this, &BezierFrameGeometry::regenerate);
+                simulation, &Simulation::springsChanged, this, &BezierFrameGeometry::regenerate);
         simulation = value;
         if (simulation != nullptr)
             QObject::connect(
-                simulation, &Simulation::pointsChanged, this, &BezierFrameGeometry::regenerate);
+                simulation, &Simulation::springsChanged, this, &BezierFrameGeometry::regenerate);
         emit simulationChanged();
         regenerate();
     }
@@ -87,10 +87,9 @@ void BezierFrameGeometry::regenerate() {
     unsigned int ind = 0;
 
     for (const auto& elem : springs) {
-        const auto& spring = *elem;
 
-        auto from = spring.getStart()->getPos();
-        auto to   = spring.getEnd()->getPos();
+        auto from = elem->getStart()->getPos();
+        auto to   = elem->getEnd()->getPos();
         vb.push_back({from.x(), from.y(), from.z()});
         vb.push_back({to.x(), to.y(), to.z()});
 
@@ -98,39 +97,13 @@ void BezierFrameGeometry::regenerate() {
         ib.push_back(ind++);
     }
 
-    // for (std::size_t x = 0; x < Simulation::size; ++x) {
-    //     for (std::size_t y = 0; y < Simulation::size; ++y) {
-    //         for (std::size_t z = 0; z < Simulation::size; ++z) {
-    //             auto& particle = simulation->getParticle(x, y, z);
-
-    //             vb[indexFunc(x, y, z)] = {
-    //                 {particle.position.x(), particle.position.y(), particle.position.z()},
-    //                 {0.0f, 0.0f, 0.0f}};
-
-    //             if (x < Simulation::size - 1) {
-    //                 ib.push_back(indexFunc(x, y, z));
-    //                 ib.push_back(indexFunc(x + 1, y, z));
-    //             }
-
-    //             if (y < Simulation::size - 1) {
-    //                 ib.push_back(indexFunc(x, y, z));
-    //                 ib.push_back(indexFunc(x, y + 1, z));
-    //             }
-
-    //             if (z < Simulation::size - 1) {
-    //                 ib.push_back(indexFunc(x, y, z));
-    //                 ib.push_back(indexFunc(x, y, z + 1));
-    //             }
-    //         }
-    //     }
-    // }
-
     ibo->setData(QByteArray(reinterpret_cast<const char*>(ib.data()),
                             static_cast<int>(ib.size() * sizeof(unsigned int))));
-    vbo->setData(
-        QByteArray(reinterpret_cast<const char*>(vb.data()), static_cast<int>(sizeof(vb))));
+    vbo->setData(QByteArray(reinterpret_cast<const char*>(vb.data()),
+                            static_cast<int>(vb.size() * sizeof(vertex))));
 
-    indexAttr->setCount(static_cast<unsigned>(ib.size()));
-    positionAttr->setCount(static_cast<unsigned>(vb.size()));
+    std::cout << ib.size() << std::endl;
+    indexAttr->setCount(static_cast<unsigned>(verticesCount));
+    positionAttr->setCount(static_cast<unsigned>(verticesCount));
     // normalAttr->setCount(static_cast<unsigned>(verticesCount));
 }

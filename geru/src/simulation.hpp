@@ -80,8 +80,12 @@ class Simulation : public QObject {
     void springsChanged();
 
   private:
+    void computeCornerPoints();
+
     QVector3D framePosition;
     QVector3D frameRotation;
     QList<Point*> pts;
+
+    std::array<Point*, 8> cubePts;
     QList<Spring*> sprs;
 };
