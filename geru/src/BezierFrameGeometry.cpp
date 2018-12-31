@@ -47,7 +47,7 @@ BezierFrameGeometry::BezierFrameGeometry(Qt3DCore::QNode* parent)
 void BezierFrameGeometry::setSimulation(Simulation* value) {
     std::cout << "setting simu" << std::endl;
     if (simulation != value) {
-        std::cout << "not the same simu" << std::endl;
+        // std::cout << "not the same simu" << std::endl;
         if (simulation != nullptr)
             QObject::disconnect(
                 simulation, &Simulation::springsChanged, this, &BezierFrameGeometry::regenerate);
@@ -66,14 +66,14 @@ void BezierFrameGeometry::regenerate() {
         indexAttr->setCount(0);
         positionAttr->setCount(0);
         // normalAttr->setCount(0);
-        std::cout << "empty simulation" << std::endl;
+        // std::cout << "empty simulation" << std::endl;
         return;
     }
 
     const auto& springs = simulation->borrowSprings();
 
     const auto verticesCount = springs.size() * 2;
-    std::cout << "there are " << verticesCount << "/2 springs." << std::endl;
+    // std::cout << "there are " << verticesCount << "/2 springs." << std::endl;
 
     std::vector<vertex> vb;
     vb.reserve(verticesCount);
@@ -102,7 +102,7 @@ void BezierFrameGeometry::regenerate() {
     vbo->setData(QByteArray(reinterpret_cast<const char*>(vb.data()),
                             static_cast<int>(vb.size() * sizeof(vertex))));
 
-    std::cout << ib.size() << std::endl;
+    //std::cout << ib.size() << std::endl;
     indexAttr->setCount(static_cast<unsigned>(verticesCount));
     positionAttr->setCount(static_cast<unsigned>(verticesCount));
     // normalAttr->setCount(static_cast<unsigned>(verticesCount));

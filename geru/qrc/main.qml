@@ -33,6 +33,12 @@ ApplicationWindow {
     Simulation {
         id: simulator
         framePos: mouseRaycast.worldPosition
+
+        internalSpring: simulationProperties.springConstant
+        externalSpring: simulationProperties.frameSpringConstant
+        pointMass: simulationProperties.mass
+        viscose: simulationProperties.viscosityConstant
+        wallBouncing: simulationProperties.wallsSpringiness
     }
 
     Rectangle {
@@ -48,6 +54,7 @@ ApplicationWindow {
 
         SimulationProperties {
             id: simulationProperties
+            onClicked: simulator.randomizePositions()
 
             anchors.fill: parent
             anchors.margins: 10
@@ -79,11 +86,6 @@ ApplicationWindow {
             Entity {
                 id: rootNode
                 components: [frameGraph, inputSettings, keyboardHandler, mouseHandler]
-
-                CubeWalls {
-                    id: cubeWalls
-                    springiness: simulationProperties.wallsSpringiness
-                }
 
                 RenderSettings {
                     id: frameGraph
@@ -212,8 +214,8 @@ ApplicationWindow {
 
                 BezierCubeMaterial {
                     id: cubeMaterial
-					light1Position: Qt.vector4d(cubeWalls.xMax, cubeWalls.yMax, cubeWalls.zMax, 1)
-					light2Position: Qt.vector4d(cubeWalls.xMin, cubeWalls.yMin, cubeWalls.zMin, 1)
+					light1Position: Qt.vector4d(30, 30, 30, 1)
+					light2Position: Qt.vector4d(-30, -30, -30, 1)
 					//light1Position: Qt.vector4d(0, cubeWalls.yMax, 0, 1)
 					//light2Position: Qt.vector4d(0, cubeWalls.yMax, 0, 1)
                 }
@@ -322,9 +324,9 @@ ApplicationWindow {
                         id: wallsGeometryRenderer
                         primitiveType: GeometryRenderer.Lines
                         geometry: CuboidWireframeGeometry {
-                            xExtent: cubeWalls.xMax - cubeWalls.xMin
-                            yExtent: cubeWalls.yMax - cubeWalls.xMin
-                            zExtent: cubeWalls.zMax - cubeWalls.zMin
+                            xExtent: 60
+                            yExtent: 60
+                            zExtent: 60
                         }
                     }
 

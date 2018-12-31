@@ -10,12 +10,8 @@ set(SOURCE_FILES
         src/BezierFrameGeometry.cpp
         src/CuboidWireframeGeometry.hpp
         src/CuboidWireframeGeometry.cpp
-        src/ParticleModel.hpp
-        src/ParticleModel.cpp
         src/QmlRaycast.hpp
         src/QmlRaycast.cpp
-        src/CubeWalls.hpp
-        src/CubeWalls.cpp
         src/simulation.hpp
         src/simulation.cpp
 

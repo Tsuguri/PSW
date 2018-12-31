@@ -3,10 +3,9 @@
 
 #include <vector>
 
-#include <Qt3DRender/QGeometry>
 #include <Qt3DRender/QAttribute>
-
-#include "ParticleModel.hpp"
+#include <Qt3DRender/QBuffer>
+#include <Qt3DRender/QGeometry>
 
 class CuboidWireframeGeometry : public Qt3DRender::QGeometry {
     Q_OBJECT
@@ -15,12 +14,14 @@ class CuboidWireframeGeometry : public Qt3DRender::QGeometry {
     Q_PROPERTY(float yExtent READ getYExtent WRITE setYExtent NOTIFY yExtentChanged)
     Q_PROPERTY(float zExtent READ getZExtent WRITE setZExtent NOTIFY zExtentChanged)
 
-public:
+  public:
     static const float DefaultExtent;
 
-    explicit CuboidWireframeGeometry(Qt3DCore::QNode *parent = nullptr);
+    explicit CuboidWireframeGeometry(Qt3DCore::QNode* parent = nullptr);
 
-    float getXExtent() const { return xExtent; }
+    float getXExtent() const {
+        return xExtent;
+    }
 
     void setXExtent(float value) {
         xExtent = value;
@@ -28,7 +29,9 @@ public:
         regenerate();
     }
 
-    float getYExtent() const { return yExtent; }
+    float getYExtent() const {
+        return yExtent;
+    }
 
     void setYExtent(float value) {
         yExtent = value;
@@ -36,18 +39,21 @@ public:
         regenerate();
     }
 
-    float getZExtent() const { return zExtent; }
+    float getZExtent() const {
+        return zExtent;
+    }
 
     void setZExtent(float value) {
         zExtent = value;
         emit zExtentChanged();
         regenerate();
     }
-signals:
+  signals:
     void xExtentChanged();
     void yExtentChanged();
     void zExtentChanged();
-private:
+
+  private:
     float xExtent, yExtent, zExtent;
     struct vertex {
         float position[3];
@@ -60,4 +66,4 @@ private:
     void regenerate();
 };
 
-#endif //PSW_CUBOID_WIREFRAME_GEOMETRY_HPP
+#endif  //PSW_CUBOID_WIREFRAME_GEOMETRY_HPP

@@ -7,15 +7,16 @@ ColumnLayout {
 
     spacing: 10
 
+    signal clicked();
     property alias mass: massSlider.value
     property alias springConstant: springConstantSlider.value
     property alias frameSpringConstant: frameSpringConstantSlider.value
     property alias viscosityConstant: viscosityConstantSlider.value
     property alias wallsSpringiness: wallsSpringinessSlider.value
-    property alias showFrame: showFrameCheckBox.checked
+    property bool showFrame: true //showFrameCheckBox.checked
     property alias showParticles: showParticlesCheckBox.checked
     property alias showSprings: showSpringsCheckBox.checked
-    property alias showGello: showGelloCheckBox.checked
+    property bool showGello: true //showGelloCheckBox.checked
     property alias showWalls: showWallsCheckBox.checked
     //property alias mesh: meshComboBox.currentText
 
@@ -88,6 +89,11 @@ ColumnLayout {
             to: 1
             value: 0.2
         }
+        Button {
+            text: "Add noise"
+            onClicked: root.clicked();
+            Layout.fillWidth: true
+        }
 
     }
 
@@ -103,11 +109,11 @@ ColumnLayout {
 
         columns: 2
 
-        CheckBox {
-            id: showFrameCheckBox
-            text: qsTr("Show Box")
-            checkState: Qt.Checked
-        }
+        // CheckBox {
+        //     id: showFrameCheckBox
+        //     text: qsTr("Show Box")
+        //     checkState: Qt.Checked
+        // }
 
         CheckBox {
             id: showParticlesCheckBox
@@ -121,11 +127,11 @@ ColumnLayout {
             checkState: Qt.Checked
         }
 
-        CheckBox {
-            id: showGelloCheckBox
-            text: qsTr("Show Geru")
-            checkState: Qt.Checked
-        }
+        // CheckBox {
+        //     id: showGelloCheckBox
+        //     text: qsTr("Show Geru")
+        //     checkState: Qt.Checked
+        // }
         CheckBox {
             id: showWallsCheckBox
             text: qsTr("Show Walls")
