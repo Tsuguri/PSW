@@ -30,13 +30,7 @@ ApplicationWindow {
         id: simulator
     }
 
-    Haru.MathFormula {
-        id: externalForceFormula
-    }
-
-    Haru.MathFormula {
-        id: originMovementFormula
-    }
+  
 
     Item{
         id: initialValues
