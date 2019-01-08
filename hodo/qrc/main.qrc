@@ -1,0 +1,9 @@
+<RCC>
+    <qresource prefix="/">
+        <file>main.qml</file>
+	<file>controls/ScrollableSection.qml</file>
+	<file>controls/Section.qml</file>
+	<file>controls/Visualization.qml</file>
+	<file>controls/DecimalInput.qml</file>
+    </qresource>
+</RCC>
