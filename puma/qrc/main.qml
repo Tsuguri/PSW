@@ -38,10 +38,10 @@ ApplicationWindow {
         //startEuler.y: startEuler.yVal
         //startEuler.z: startEuler.zVal
         endEuler: endEuler.value//Qt.vector3d(endEuler.xVal, endEuler.yVal, endEuler.zVal);
-        startQuat: startQuat.value
+        //startQuat: startQuat.value
 
-        endQuat: endQuat.value
-        slerp: slerp.checked
+        //endQuat: endQuat.value
+        slerp: true
 
         animationTime: animationTime.value
     }
@@ -112,6 +112,7 @@ ApplicationWindow {
                 text: "End  "
             }
 
+            /*
             Text {
                 text: "Quat"
             }
@@ -127,7 +128,7 @@ ApplicationWindow {
                 id: slerp
                 text: "use slerp"
 
-            }
+            }*/
         } // ColumnLayout
     } // Rectangle
 

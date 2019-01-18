@@ -23,10 +23,10 @@ class Simulation : public QObject {
     Q_PROPERTY(double l READ getL WRITE setL NOTIFY lChanged);
     Q_PROPERTY(double r READ getR WRITE setR NOTIFY rChanged);
 
-    Q_PROPERTY(double angle READ getAngle NOTIFY angleChanged);
-    Q_PROPERTY(double position READ getPosition NOTIFY positionChanged);
-    Q_PROPERTY(double velocity READ getVelocity NOTIFY velocityChanged);
-    Q_PROPERTY(double acceleration READ getAcceleration NOTIFY accelerationChanged);
+    Q_PROPERTY(double angle READ getAngle NOTIFY stateChanged);
+    Q_PROPERTY(double position READ getPosition NOTIFY stateChanged);
+    Q_PROPERTY(double velocity READ getVelocity NOTIFY stateChanged);
+    Q_PROPERTY(double acceleration READ getAcceleration NOTIFY stateChanged);
 
     Q_PROPERTY(double time READ getTime NOTIFY timeChanged);
 
@@ -57,13 +57,10 @@ class Simulation : public QObject {
     Q_INVOKABLE void reset();
 
   signals:
-    void angleChanged();
     void runningChanged();
     void pausedChanged();
 
-    void positionChanged();
-    void velocityChanged();
-    void accelerationChanged();
+    void stateChanged();
 
     void timeChanged();
     void stepMade();
@@ -83,6 +80,7 @@ class Simulation : public QObject {
     double currentAngle;
     State current;
     State previous;
+    State prevPrev;
 
     std::unique_ptr<QTimer> timer;
     std::unique_ptr<QElapsedTimer> elapsed;

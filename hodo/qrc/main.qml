@@ -176,7 +176,7 @@ ApplicationWindow {
                     Layout.fillHeight: true
                     Layout.minimumHeight: 50
 
-                    property bool inputEnabled: !simulator.running
+                    property bool inputEnabled: true
                     header: "Properties"
 
                     GridLayout {

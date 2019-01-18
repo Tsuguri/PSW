@@ -43,13 +43,23 @@ void Simulation::togglePause() {
     emit pausedChanged();
 }
 
+double massPosition(double r, double l, double a) {
+    return r * std::cos(a) + std::sqrt(l*l - r*r*std::sin(a)*std::sin(a));
+
+}
+
 void Simulation::runSimulation(double dt) {
     timer->setInterval(static_cast<int>(dt * 1000));
     time     = 0;
     this->dt = dt;
 
-    current  = {0, 0, 0};
-    previous = {0, 0, 0};
+    auto ppPos = massPosition(r,l,-w*2*dt);
+    auto pPos = massPosition(r,l,-w*dt);
+    auto pos = massPosition(r,l,0);
+
+    current  = {pos, 0, 0};
+    previous = {pPos, 0, 0};
+    prevPrev = {ppPos,0,0};
     timer->start();
     elapsed->restart();
     running = true;
@@ -60,10 +70,7 @@ void Simulation::runSimulation(double dt) {
 }
 
 void Simulation::StateChanged() {
-    emit positionChanged();
-    emit velocityChanged();
-    emit accelerationChanged();
-    emit angleChanged();
+    emit stateChanged();
 }
 
 void Simulation::reset() {
@@ -77,12 +84,12 @@ void Simulation::reset() {
     emit pausedChanged();
 }
 
+
+
 void Simulation::tick() {
 
     //time += dt;
 
-    auto nextState = State{std::sin(time), std::cos(time), -std::sin(time)};
-    currentAngle   = std::fmod(time, M_PI * 2);
 
     auto elapsedTime = elapsed->elapsed() + elapsedNotUsed;
     elapsed->restart();
@@ -90,8 +97,19 @@ void Simulation::tick() {
 
     while (elapsedTime > interval) {
         elapsedTime -= interval;
-        time += interval * 0.001;
+        auto dt = interval * 0.001;
+        time += dt;
 
+        currentAngle   = std::fmod(time*3, M_PI * 2);
+
+
+
+        auto nextPos = massPosition(r,l,currentAngle);
+        auto nextVel = (nextPos - previous.position)/ dt;
+        auto nextAcc = (nextPos - previous.position * 2 + prevPrev.position)/ (dt * dt);
+        auto nextState = State{nextPos, nextVel, nextAcc};
+
+        prevPrev = previous;
         previous = current;
         current  = nextState;
     }
@@ -117,6 +135,7 @@ double Simulation::getVelocity() const {
 double Simulation::getAcceleration() const {
     return current.acceleration;
 }
+
 
 void Simulation::setW(double val) {
     w = val;

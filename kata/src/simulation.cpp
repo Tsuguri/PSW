@@ -44,6 +44,12 @@ Simulation::Simulation(QObject* parent)
     : QObject(parent), a(false), b(false), showOpt(false), timer(new QTimer(this)), available() {
     timer->setInterval(20);
     QObject::connect(timer, &QTimer::timeout, this, &Simulation::tick);
+    startA1=50;
+    endA1=startA1;
+    startA2=40;
+    endA2=40;
+    emit startChanged();
+    emit endChanged();
 }
 
 bool Simulation::getShowOptions() const {
