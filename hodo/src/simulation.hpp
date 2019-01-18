@@ -2,6 +2,7 @@
 #define SIMULATOR_HPP
 
 #include <memory>
+#include <random>
 
 #include <QElapsedTimer>
 #include <QObject>
@@ -22,6 +23,7 @@ class Simulation : public QObject {
     Q_PROPERTY(double w READ getW WRITE setW NOTIFY wChanged);
     Q_PROPERTY(double l READ getL WRITE setL NOTIFY lChanged);
     Q_PROPERTY(double r READ getR WRITE setR NOTIFY rChanged);
+    Q_PROPERTY(double err READ getErr WRITE setErr NOTIFY errChanged);
 
     Q_PROPERTY(double angle READ getAngle NOTIFY stateChanged);
     Q_PROPERTY(double position READ getPosition NOTIFY stateChanged);
@@ -37,6 +39,7 @@ class Simulation : public QObject {
     void setW(double val);
     void setR(double val);
     void setL(double val);
+    void setErr(double val);
 
     bool getRunning() const;
     bool getPaused() const;
@@ -48,6 +51,7 @@ class Simulation : public QObject {
     double getW() const;
     double getR() const;
     double getL() const;
+    double getErr() const;
 
     void tick();
 
@@ -68,6 +72,7 @@ class Simulation : public QObject {
     void wChanged();
     void rChanged();
     void lChanged();
+    void errChanged();
 
   private:
     void StateChanged();
@@ -76,15 +81,16 @@ class Simulation : public QObject {
     bool running;
     bool paused;
     double time;
-    double w, r, l;
+    double w, r, l, err;
     double currentAngle;
     State current;
     State previous;
-    State prevPrev;
 
     std::unique_ptr<QTimer> timer;
     std::unique_ptr<QElapsedTimer> elapsed;
     quint64 elapsedNotUsed;
+    std::random_device rd;
+    std::mt19937 gen;
 };
 
 #endif  // SIMULATOR_HPP

@@ -31,6 +31,7 @@ ApplicationWindow {
         w: initialValues.w
         l: initialValues.l
         r: initialValues.r
+        err: initialValues.err
     }
 
   
@@ -39,9 +40,10 @@ ApplicationWindow {
         id: initialValues
 
         property real dt: Number.fromLocaleString(timeInput.text)
-        property real r: Number.fromLocaleString(rInput.text)
-        property real l: Number.fromLocaleString(lInput.text)
+        property alias r: rInput.value
+        property alias l: lInput.value
         property real w: Number.fromLocaleString(omegaInput.text)
+        property real err: Number.fromLocaleString(errInput.text)
     }
 
     header: ToolBar {
@@ -58,7 +60,7 @@ ApplicationWindow {
                         simulator.togglePause()
                     } else {
 
-                        if( !timeInput.valid || !omegaInput.valid || !rInput.valid || !lInput.valid){
+                        if( !timeInput.valid || !omegaInput.valid){
                             return;
                         }
 
@@ -87,10 +89,16 @@ ApplicationWindow {
                     kinematicsYAxis.min = -1
                     kinematicsYAxis.max = 1
 
-                    velocityAxis.min = -10
-                    velocityAxis.max = 10
-                    positionAxis.min = -10
-                    positionAxis.max = 10
+                    posYAxis.min = -1
+                    posYAxis.max = 1
+
+                    velocityYAxis.min = -1
+                    velocityYAxis.max=1
+
+                    velocityAxis.min = 0
+                    velocityAxis.max =0
+                    positionAxis.min = 0
+                    positionAxis.max =0
                     
                 }
                 enabled: simulator.running
@@ -202,26 +210,22 @@ ApplicationWindow {
                         Text {
                             text: "R: "
                         }
-                        DecimalInput {
+                        Slider {
                             id: rInput
-                            text: "3.0"
                             Layout.fillWidth: true
-                            min: 0
-                            max: 100
-                            decimals: 2
-                            enabled: initialState.inputEnabled
+                            from: 0.0
+                            to: 100
+                            value: 3.0
                         }
                         Text {
                             text: "L: "
                         }
-                        DecimalInput {
+                        Slider {
                             id: lInput
-                            text: "6.0"
-                            Layout.fillWidth: true
-                            min: initialValues.r*2
-                            max: 500
-                            decimals: 2
-                            enabled: initialState.inputEnabled
+                            Layout.fillWidth:true
+                            from: rInput.value*2
+                            to: 200
+                            value: 6.0
                         }
                         Text {
                             text: "Omega: "
@@ -233,30 +237,59 @@ ApplicationWindow {
                             min: -10.0
                             max: 10.0
                             decimals: 2
-                            enabled: initialState.inputEnabled
+                        }
+                        Text {
+                            text: "Err: "
+                        }
+                        DecimalInput {
+                            id: errInput
+                            text: "0.0"
+                            Layout.fillWidth: true
+                            min:0.0
+                            max:20.0
+                            decimals: 2
                         }
                     }
                 }
             }
-        }
+        } // left pane container
 
         Item {
             id: centerGraphs
-
             width: 350
 
             anchors {
-                right: visualization.left
-                left: leftPaneContainer.right
+                right: parent.right
                 top: parent.top
-                bottom: bottomGraphs.top
+                bottom: parent.bottom
+            }
+            
+            ColumnLayout {
+                id: right
+                anchors.fill: parent
+
+                Section{
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+                    Layout.rightMargin: 5
+                    Layout.topMargin: 5
+                    header: "Visualiztion"
+                Visualization {
+                    id: visualization
+                    running: simulator.running
+                    angle: simulator.angle
+                    position: 10
+                    circleRadius: simulator.r
+                    barLength: simulator.l
+        
+                    width: 350
+                }
             }
                 Section {
-                    anchors.fill: parent
-                    anchors.margins: 5
-                    anchors.leftMargin: 0
-
                     header: "Configuration space"
+                    Layout.fillWidth:true
+                    Layout.rightMargin: 5
+                    Layout.bottomMargin: 5
 
                     ChartView {
                         id: cspaceChart
@@ -269,14 +302,14 @@ ApplicationWindow {
 
                         ValueAxis {
                             id: positionAxis
-                            min: -10
-                            max: 10
+                            min: 0
+                            max: 0
                         }
 
                         ValueAxis {
                             id: velocityAxis
-                            min: -10
-                            max: 10
+                            min: 0
+                            max: 0
                         }
 
                         LineSeries {
@@ -289,88 +322,111 @@ ApplicationWindow {
 
                     }
 
+                }
+            
             }
         }
 
-        Visualization {
-            id: visualization
-            running: simulator.running
-            angle: simulator.angle
-            position: 10
-            circleRadius: simulator.r
-            barLength: simulator.l
-
-            width: 350
-            anchors {
-                right: parent.right
-                top: parent.top
-                bottom: parent.bottom
-            }
-        }
         Item {
             id: bottomGraphs
 
-            height: 300
 
             anchors {
                 left: leftPaneContainer.right
-                right: visualization.left
+                right: centerGraphs.left
                 bottom: parent.bottom
+                top: parent.top
             }
 
                 Section {
 
                 anchors.fill: parent
                 anchors.margins: 5
-                anchors.topMargin: 0
+                anchors.topMargin: 5
                 anchors.leftMargin: 0
                     header: "Pos, Vel, Acc"
 
-                    ChartView {
-                        id: kinematicsChart
-                        anchors.fill: parent
-                        antialiasing: true
+                    ColumnLayout{
+                        anchors.fill:parent
+                        ChartView {
 
-                        ValueAxis {
-                            id: kinematicsTimeAxis
-                            property real windowWidth: 15
-                            property real filled: 0.9
-                            min: simulator.time < filled * windowWidth ? 0 : simulator.time - filled * windowWidth
-                            max: simulator.time < filled * windowWidth ? windowWidth : simulator.time + windowWidth * (1-filled)
+                            Layout.fillWidth: true
+                            Layout.preferredHeight: 300
+                            antialiasing: true
+                            ValueAxis {
+                                id: posTimeAxis
+                                property real windowWidth: 15
+                                property real filled: 0.9
+                                min: simulator.time < filled * windowWidth ? 0 : simulator.time - filled * windowWidth
+                                max: simulator.time < filled * windowWidth ? windowWidth : simulator.time + windowWidth * (1-filled)
+                            }
+                            ValueAxis {
+                                id: posYAxis
+                                min: -1
+                                max: 1
+                            }
+                            LineSeries {
+                                id: positionSeries
+                                name: "Position"
+                                axisX: posTimeAxis
+                                axisY: posYAxis 
+                                useOpenGL: true
+                            }
                         }
+                        ChartView {
+                            Layout.fillWidth: true
+                            Layout.preferredHeight: 300
+                            antialiasing: true
+                            ValueAxis {
+                                id: velocityTimeAxis
+                                property real windowWidth: 15
+                                property real filled: 0.9
+                                min: simulator.time < filled * windowWidth ? 0 : simulator.time - filled * windowWidth
+                                max: simulator.time < filled * windowWidth ? windowWidth : simulator.time + windowWidth * (1-filled)
+                            }
 
-                        ValueAxis {
-                            id: kinematicsYAxis
-                            min: -1
-                            max: 1
+                            ValueAxis {
+                                id: velocityYAxis
+                                min: -1
+                                max: 1
+                            }
+                            LineSeries {
+                                id: velocitySeries
+                                name: "Velocity"
+                                axisX:velocityTimeAxis 
+                                axisY:velocityYAxis 
+                                useOpenGL: true
+                            }
                         }
+                        ChartView {
+                            Layout.fillWidth:true
+                            Layout.preferredHeight: 300
+                            antialiasing: true
 
+                            ValueAxis {
+                                id: kinematicsTimeAxis
+                                property real windowWidth: 15
+                                property real filled: 0.9
+                                min: simulator.time < filled * windowWidth ? 0 : simulator.time - filled * windowWidth
+                                max: simulator.time < filled * windowWidth ? windowWidth : simulator.time + windowWidth * (1-filled)
+                            }
 
-                        LineSeries {
-                            id: positionSeries
-                            name: "Position"
-                            axisX: kinematicsTimeAxis
-                            axisY: kinematicsYAxis
-                            useOpenGL: true
+                            ValueAxis {
+                                id: kinematicsYAxis
+                                min: -1
+                                max: 1
+                            }
+                            
+                            LineSeries {
+                                id: accelerationSeries
+                                name: "Acceleration"
+                                axisX: kinematicsTimeAxis
+                                axisY: kinematicsYAxis
+                                useOpenGL: true
+                            }
+
                         }
-
-                        LineSeries {
-                            id: velocitySeries
-                            name: "Velocity"
-                            axisX: kinematicsTimeAxis
-                            axisY: kinematicsYAxis
-                            useOpenGL: true
-                        }
-
-                        LineSeries {
-                            id: accelerationSeries
-                            name: "Acceleration"
-                            axisX: kinematicsTimeAxis
-                            axisY: kinematicsYAxis
-                            useOpenGL: true
-                        }
-
-                    }
+                    } // column
                 } // section 
         } //bottom graph
     } //background
@@ -378,14 +434,33 @@ ApplicationWindow {
     Connections {
         target: simulator
         onStepMade: {
+            var max = 300
             positionSeries.append(simulator.time, simulator.position)
             velocitySeries.append(simulator.time, simulator.velocity)
             accelerationSeries.append(simulator.time, simulator.acceleration)
 
-            kinematicsYAxis.min = Math.min(kinematicsYAxis.min, simulator.position, simulator.velocity, simulator.acceleration)
-            kinematicsYAxis.max = Math.max(kinematicsYAxis.max, simulator.position, simulator.velocity, simulator.acceleration)
+            if(positionSeries.count > max)
+            {
+                positionSeries.remove(0)
+                velocitySeries.remove(0)
+                accelerationSeries.remove(0)
+            }
+
+            kinematicsYAxis.min = Math.min(kinematicsYAxis.min, simulator.acceleration)
+            kinematicsYAxis.max = Math.max(kinematicsYAxis.max, simulator.acceleration)
+
+            velocityYAxis.min = Math.min(velocityYAxis.min, simulator.velocity)
+            velocityYAxis.max = Math.max(velocityYAxis.max, simulator.velocity)
+
+            posYAxis.min = Math.min(posYAxis.min, simulator.position)
+            posYAxis.max = Math.max(posYAxis.max, simulator.position)
 
             cspaceSeries.append(simulator.position, simulator.velocity)
+
+            if(cspaceSeries.count > max) {
+                cspaceSeries.remove(0)
+
+            }
 
             positionAxis.min = Math.min(positionAxis.min, simulator.position);
             positionAxis.max = Math.max(positionAxis.max, simulator.position);

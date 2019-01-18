@@ -1,6 +1,7 @@
 #include "simulation.hpp"
 #include <cmath>
 #include <iostream>
+#include <random>
 
 Simulation::Simulation(QObject* parent)
     : QObject(parent),
@@ -12,7 +13,9 @@ Simulation::Simulation(QObject* parent)
       r(1),
       l(2),
       elapsed(new QElapsedTimer),
-      elapsedNotUsed(0) {
+      elapsedNotUsed(0),
+      gen(rd())
+{
     QObject::connect(timer.get(), &QTimer::timeout, this, &Simulation::tick);
 }
 
@@ -59,11 +62,12 @@ void Simulation::runSimulation(double dt) {
 
     current  = {pos, 0, 0};
     previous = {pPos, 0, 0};
-    prevPrev = {ppPos,0,0};
     timer->start();
     elapsed->restart();
     running = true;
     paused  = false;
+    currentAngle=0;
+    emit stateChanged();
 
     emit runningChanged();
     emit pausedChanged();
@@ -91,6 +95,9 @@ void Simulation::tick() {
     //time += dt;
 
 
+     std::normal_distribution<double> errorDistribution{
+         0.0, err> 0.0 ? err: 1.0};
+
     auto elapsedTime = elapsed->elapsed() + elapsedNotUsed;
     elapsed->restart();
     auto interval = timer->interval();
@@ -100,16 +107,17 @@ void Simulation::tick() {
         auto dt = interval * 0.001;
         time += dt;
 
-        currentAngle   = std::fmod(time*3, M_PI * 2);
+        currentAngle += dt*w;
+        currentAngle = std::fmod(currentAngle, 2*M_PI);
+        auto error = err > 0.0 ? errorDistribution(gen) : 0.0;
 
-
-
-        auto nextPos = massPosition(r,l,currentAngle);
-        auto nextVel = (nextPos - previous.position)/ dt;
-        auto nextAcc = (nextPos - previous.position * 2 + prevPrev.position)/ (dt * dt);
+        auto nextPos = massPosition(r,l + error, currentAngle);
+        auto nextVel = (nextPos - current.position)/ dt;
+        auto nextAcc = (nextPos - current.position * 2 + previous.position)/ dt / dt;
+        //auto nextAcc = ((nextPos - previous.position)/dt - (previous.position - prevPrev.position)/dt)/dt;
+        //std::cout<<"n: "<<nextPos<<" prev: "<<previous.position<<" pp: "<<prevPrev.position<<std::endl;
         auto nextState = State{nextPos, nextVel, nextAcc};
 
-        prevPrev = previous;
         previous = current;
         current  = nextState;
     }
@@ -149,8 +157,12 @@ void Simulation::setL(double val) {
 
 void Simulation::setR(double val) {
     r = val;
-    std::cout << "setr: " << val;
     emit rChanged();
+}
+
+void Simulation::setErr(double val) {
+    err = val;
+    emit errChanged();
 }
 
 double Simulation::getAngle() const {
@@ -167,4 +179,8 @@ double Simulation::getR() const {
 
 double Simulation::getL() const {
     return l;
+}
+
+double Simulation::getErr() const {
+    return err;
 }

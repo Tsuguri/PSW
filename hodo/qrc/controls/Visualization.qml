@@ -41,7 +41,7 @@ Rectangle {
     property bool running: false
     property real position: 0.0
     property real angle: 0.0
-    property real barLength: 10
+    property real barLength: 8
     property real circleRadius: 4
 
     property vector2d barEnd: root.barEndPosition(root.circleRadius*10, root.barLength*10, root.angleDegree)
@@ -73,7 +73,7 @@ Rectangle {
         transform: [
             Translate {
                 x: root.width/2 - mass.width/2
-                y: 150 - (root.barEnd.x- 150) - mass.height/2
+                y: 150 + root.barEnd.x
             }
         ]
     }
@@ -85,15 +85,15 @@ Rectangle {
         color: "red"
         transform: [
             Translate {
-                x: root.barStart.y - mass2.width/2 + root.width/2
-                y: -root.barStart.x - mass2.height/2 + 150
+                x: -root.barStart.y - mass2.width/2 + root.width/2
+                y: root.barStart.x - mass2.height/2 + 150
             }
         ]
     }
     Rectangle {
         id: circle
-        width: 10*circleRadius * Math.sqrt(2)
-        height: 10*circleRadius * Math.sqrt(2)
+        width: 10*circleRadius / Math.sqrt(2) *2
+        height: 10*circleRadius / Math.sqrt(2) *2
         color: "darkgray"
         antialiasing: true
         transform: [
