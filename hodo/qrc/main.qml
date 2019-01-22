@@ -40,10 +40,41 @@ ApplicationWindow {
         id: initialValues
 
         property real dt: Number.fromLocaleString(timeInput.text)
-        property alias r: rInput.value
-        property alias l: lInput.value
+        //property alias r: rInput.value
+        //property alias l: lInput.value
+        property real r: Number.fromLocaleString(rInput.text)
+        property real l: Number.fromLocaleString(lInput.text)
         property real w: Number.fromLocaleString(omegaInput.text)
         property real err: Number.fromLocaleString(errInput.text)
+
+    function resizePlot(series, axis){
+        let min = 1;
+        let max = -1;
+
+        for(let i =0; i<series.count; i++)
+        {
+            let pt = series.at(i)
+            if(min > pt.y){
+                min = pt.y
+            }
+            if (max < pt.y) {
+                max = pt.y
+            }
+        }
+
+
+        axis.min=min
+        axis.max=max
+
+    }
+    function resize() {
+        console.log("resizing")
+            resizePlot(positionSeries, posYAxis)
+            resizePlot(velocitySeries, velocityYAxis)
+            resizePlot(accelerationSeries, kinematicsYAxis)
+
+
+    }
     }
 
     header: ToolBar {
@@ -210,7 +241,29 @@ ApplicationWindow {
                         Text {
                             text: "R: "
                         }
-                        Slider {
+
+                        DecimalInput {
+                            id:rInput 
+                            text: "3.0"
+                            Layout.fillWidth: true
+                            min: 0.0001
+                            max: 100
+                            decimals: 2
+                            enabled: initialState.inputEnabled
+                        }
+                        Text {
+                            text: "L: "
+                        }
+                        DecimalInput {
+                            id: lInput
+                            text: "6.0"
+                            Layout.fillWidth: true
+                            min: 0.001
+                            max: 200
+                            decimals: 2
+                            enabled: initialState.inputEnabled
+                        }
+                        /*Slider {
                             id: rInput
                             Layout.fillWidth: true
                             from: 0.0
@@ -227,6 +280,7 @@ ApplicationWindow {
                             to: 200
                             value: 6.0
                         }
+                        */
                         Text {
                             text: "Omega: "
                         }
@@ -248,6 +302,10 @@ ApplicationWindow {
                             min:0.0
                             max:20.0
                             decimals: 2
+                        }
+                        Button {
+                            text:" adjust plots"
+                            onClicked: initialValues.resize()
                         }
                     }
                 }

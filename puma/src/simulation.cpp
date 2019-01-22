@@ -318,6 +318,8 @@ Simulation::Data Simulation::computeIK(QVector3D pos,
     }
 
     auto d = Data();
+
+    n024 = QVector3D::crossProduct(p4 - p1, p2 - p1);
     d.q1   = -90 - rad2Deg(std::atan2(p4.z(), p4.x()));
     d.q2   = rad2Deg(angle(p2 - p1, p3 - p2, n024));
     d.r2   = (p3 - p2).length();
