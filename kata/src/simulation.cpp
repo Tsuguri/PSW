@@ -156,12 +156,10 @@ std::tuple<float, float, float, float> Simulation::InverseKinematics(int x, int 
     float length0 = r1;
     float length1 = r2;
     float length2 = dist(x, y);
-    std::cout << "l1: " << r1 << " l2: " << r2 << "l3:" << length2 << std::endl;
 
     float cosAngle0 =
         ((length0 * length0) + (length2 * length2) - (length1 * length1)) / (2 * length0 * length2);
     float angle0 = std::acos(cosAngle0) * 180 / Pi;
-    std::cout << "cos angle0: " << cosAngle0 << " angle: " << angle0 << std::endl;
 
     // Inner angle beta
     float cosAngle1 =
@@ -170,7 +168,6 @@ std::tuple<float, float, float, float> Simulation::InverseKinematics(int x, int 
 
     // Angle from Joint0 and Target
     float atan = std::atan2(y, x) * 180 / Pi;
-    std::cout << "atan: " << atan << std::endl;
 
     // So they work in Unity reference frame
     float jointAngle0 = (atan - angle0);  // Angle A

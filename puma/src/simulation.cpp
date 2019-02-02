@@ -267,10 +267,10 @@ float angle(const QVector3D& v, const QVector3D& w) {
     return angle;
 }
 
-float angle(const QVector3D& v, const QVector3D& w, const QVector3D& n024) {
+float angle(const QVector3D& v, const QVector3D& w, const QVector3D& normal) {
     auto cross = QVector3D::crossProduct(v, w);
     auto angle = std::atan2(cross.length(), QVector3D::dotProduct(v, w));
-    if (QVector3D::dotProduct(cross, n024) < 0) angle = -angle;
+    if (QVector3D::dotProduct(cross, normal) < 0) angle = -angle;
     return angle;
 }
 
